@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guru - Absensi QR Code</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    .background-shapes {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .shape {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .shape:nth-child(1) {
+      width: 300px;
+      height: 300px;
+      top: 10%;
+      right: -150px;
+      animation-delay: 0s;
+    }
+
+    .shape:nth-child(2) {
+      width: 200px;
+      height: 200px;
+      bottom: 20%;
+      left: -100px;
+      animation-delay: 2s;
+    }
+
+    .shape:nth-child(3) {
+      width: 150px;
+      height: 150px;
+      top: 60%;
+      right: 20%;
+      animation-delay: 4s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    .header {
+      margin-bottom: 30px;
+    }
+
+    .logo {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      color: white;
+      font-size: 32px;
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .logo i {
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    h2 {
+      color: #2c3e50;
+      font-size: 28px;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    p {
+      color: #7f8c8d;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .qr-container {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      margin: 30px 0;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+      position: relative;
+    }
+
+    #barcodeCanvas {
+      border-radius: 10px;
+      max-width: 100%;
+      height: auto;
+      border: 3px solid #f8f9fa;
+    }
+
+    .qr-info {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      border-left: 4px solid #667eea;
+    }
+
+    .qr-info p {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .countdown {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: bold;
+      font-size: 18px;
+      color: #2c3e50;
+    }
+
+    #countdown {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 5px 12px;
+      border-radius: 20px;
+      min-width: 40px;
+      display: inline-block;
+      transition: all 0.3s ease;
+    }
+
+    .stats-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin: 30px 0;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .stat-card i {
+      font-size: 28px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-info h3 {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 5px;
+    }
+
+    .stat-info p {
+      font-size: 12px;
+      color: #7f8c8d;
+      margin: 0;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 30px;
+    }
+
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      min-width: 120px;
+      justify-content: center;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-info {
+      background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
+      color: white;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+    }
+
+    .btn-warning {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+      color: white;
+    }
+
+    .table-container {
+      background: white;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+      margin: 20px 0;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 15px 10px;
+      text-align: left;
+      border-bottom: 1px solid #f1f2f6;
+    }
+
+    th {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+
+    tr:hover {
+      background: #f8f9fa;
+    }
+
+    .status-hadir {
+      background: #2ecc71;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 10px;
+      color: white;
+      font-weight: 600;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: 300px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .toast-success {
+      background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+    }
+
+    .toast-error {
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    }
+
+    .toast-info {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    }
+
+    .toast-warning {
+      background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+        margin: 10px;
+      }
+
+      .stats-container {
+        grid-template-columns: 1fr;
+      }
+
+      .stat-card {
+        text-align: center;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .button-group {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      h2 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background-shapes">
+    <div class="shape"></div>
+    <div class="shape"></div>
+    <div class="shape"></div>
+  </div>
+
+  <!-- QR Code Section -->
+  <div class="container" id="barcodeSection">
+    <div class="header">
+      <div class="logo">
+        <i class="fas fa-qrcode"></i>
+      </div>
+      <h2>QR Code Absensi</h2>
+      <p>Siswa dapat memindai QR Code ini untuk melakukan absensi</p>
+    </div>
+    
+    <div class="qr-container">
+      <canvas id="barcodeCanvas" width="256" height="256"></canvas>
+      <div class="qr-info">
+        <p><i class="fas fa-info-circle"></i> QR Code akan berganti setiap 30 detik</p>
+        <div class="countdown">
+          <i class="fas fa-clock"></i>
+          <span id="countdown">30</span> detik
+        </div>
+      </div>
+    </div>
+    
+    <div class="stats-container">
+      <div class="stat-card">
+        <i class="fas fa-users"></i>
+        <div class="stat-info">
+          <h3 id="todayCount">0</h3>
+          <p>Hadir Hari Ini</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-clock"></i>
+        <div class="stat-info">
+          <h3 id="currentTime">--:--</h3>
+          <p>Waktu Sekarang</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="button-group">
+      <button class="btn btn-primary" onclick="showRiwayatGuru()">
+        <i class="fas fa-list"></i> Riwayat Hari Ini
+      </button>
+      <button class="btn btn-info" onclick="refreshQR()">
+        <i class="fas fa-sync-alt"></i> Refresh QR
+      </button>
+      <button class="btn btn-success" onclick="debugGenerateQR()" title="Test QR Generation">
+        <i class="fas fa-qrcode"></i> Test QR
+      </button>
+      <button class="btn btn-danger" onclick="logoutGuru()">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
+  </div>
+
+  <!-- History Section -->
+  <div class="container" id="riwayatSection" style="display:none;">
+    <div class="header">
+      <div class="logo">
+        <i class="fas fa-list"></i>
+      </div>
+      <h2>Riwayat Kehadiran Hari Ini</h2>
+      <p id="todayDate">Tanggal: --</p>
+    </div>
+    
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th><i class="fas fa-hash"></i> No</th>
+            <th><i class="fas fa-user"></i> Nama</th>
+            <th><i class="fas fa-clock"></i> Waktu</th>
+            <th><i class="fas fa-info-circle"></i> Status</th>
+          </tr>
+        </thead>
+        <tbody id="todayHistory">
+          <tr><td colspan="4" style="text-align: center; padding: 20px;">Memuat data...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="button-group">
+      <button class="btn btn-success" onclick="showBarcode()">
+        <i class="fas fa-arrow-left"></i> Kembali
+      </button>
+      <button class="btn btn-warning" onclick="exportToExcel()">
+        <i class="fas fa-file-excel"></i> Export Excel
+      </button>
+      <button class="btn btn-info" onclick="refreshHistory()">
+        <i class="fas fa-sync-alt"></i> Refresh
+      </button>
+      <button class="btn btn-danger" onclick="logoutGuru()">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast" style="display:none;">
+    <div class="toast-content">
+      <i class="toast-icon"></i>
+      <span class="toast-message"></span>
+    </div>
+  </div>
+
+  <script>
+// guru.js - Clean version without dummy data, uses in-memory state instead of localStorage
+let qrTimer;
+let countdownTimer;
+let attendanceData = []; // Store attendance data in memory
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded');
+    
+    // Simulate session check (in production, verify actual session)
+    const userSession = sessionStorage.getItem('userSession') || 'demo-session';
+    const userRole = sessionStorage.getItem('userRole') || 'guru';
+    
+    if (!userSession || userRole !== 'guru') {
+        console.log('Session check failed, redirecting...');
+        // In demo mode, continue anyway
+        // window.location.href = '/';
+        // return;
+    }
+    
+    // Set session for demo
+    sessionStorage.setItem('userSession', userSession);
+    sessionStorage.setItem('userRole', userRole);
+    
+    // Wait for QRCode library to be loaded
+    setTimeout(() => {
+        initializeGuru();
+    }, 500);
+});
+
+function initializeGuru() {
+    console.log('Initializing guru dashboard...');
+    generateQRCode();
+    startCountdown();
+    updateClock();
+    loadTodayStats();
+    
+    // Update clock every second
+    setInterval(updateClock, 1000);
+    
+    // Auto refresh QR every 30 seconds
+    qrTimer = setInterval(() => {
+        console.log('Auto-refreshing QR code...');
+        generateQRCode();
+        startCountdown();
+    }, 30000);
+    
+    // Refresh stats every 5 seconds to show new attendance immediately
+    setInterval(() => {
+        loadTodayStats();
+        // Also refresh history if it's currently shown
+        if (document.getElementById('riwayatSection').style.display === 'block') {
+            loadTodayHistory();
+        }
+    }, 5000);
+}
+
+// Fungsi ini akan dijalankan saat DOM (halaman web) selesai dimuat
+document.addEventListener('DOMContentLoaded', (event) => {
+
+    // ==================================================================
+    // FUNGSI UNTUK MENGIRIM DATA ABSEN KE SERVER (METODE POST)
+    // ==================================================================
+    function kirimDataAbsen(nis) {
+        console.log("Mengirim NIS:", nis, "ke server...");
+        const formData = new URLSearchParams();
+        formData.append('nis', nis);
+
+        fetch('/scan-absen', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.message) });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Respons dari server:", data);
+            alert(data.message); // Menampilkan notifikasi sukses/gagal
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error: ' + error.message);
+        });
+    }
+
+    // ==================================================================
+    // FUNGSI YANG DIJALANKAN SETELAH SCANNER BERHASIL MEMBACA QR
+    // ==================================================================
+    function onScanSuccess(decodedText, decodedResult) {
+        // `decodedText` adalah hasil dari QR code, yaitu NIS siswa
+        console.log(`Scan berhasil, NIS: ${decodedText}`);
+        
+        // Nonaktifkan suara "beep" bawaan scanner
+        // Hapus baris ini jika Anda ingin ada suaranya
+        Html5QrcodeScanner.SCAN_TYPE_CAMERA = 2;
+
+        // Panggil fungsi untuk mengirim data NIS ke server Flask
+        kirimDataAbsen(decodedText);
+    }
+
+    // ==================================================================
+    // KONFIGURASI DAN JALANKAN QR CODE SCANNER
+    // ==================================================================
+    // Buat instance scanner baru dan arahkan ke div 'reader'
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader",
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      /* verbose= */ false);
+      
+    // Render scanner di halaman
+    html5QrcodeScanner.render(onScanSuccess);
+
+});
+
+function generateQRCode() {
+    const canvas = document.getElementById('barcodeCanvas');
+    
+    if (!canvas) {
+        console.error('Canvas element not found!');
+        return;
+    }
+    
+    // Clear previous QR code
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 15);
+    const qrData = `ABSENSI-${timestamp}-${randomId}`;
+    
+    console.log('Generating QR with data:', qrData);
+    
+    // Try QRious first (simpler API)
+    if (typeof QRious !== 'undefined') {
+        try {
+            const qr = new QRious({
+                element: canvas,
+                value: qrData,
+                size: 256,
+                foreground: '#000000',
+                background: '#FFFFFF'
+            });
+            console.log('QR code generated successfully with QRious');
+            showToast('success', 'QR Code berhasil di-generate');
+            return;
+        } catch (error) {
+            console.error('QRious failed:', error);
+        }
+    }
+    
+    // Try QRCode library as fallback
+    if (typeof QRCode !== 'undefined') {
+        QRCode.toCanvas(canvas, qrData, {
+            width: 256,
+            height: 256,
+            margin: 2,
+            color: {
+                dark: '#000000',
+                light: '#FFFFFF'
+            },
+            errorCorrectionLevel: 'M'
+        }, function (error) {
+            if (error) {
+                console.error('QRCode library failed:', error);
+                generateManualQR(qrData);
+            } else {
+                console.log('QR code generated successfully with QRCode');
+                showToast('success', 'QR Code berhasil di-generate');
+            }
+        });
+        return;
+    }
+    
+    // Fallback to manual QR generation
+    generateManualQR(qrData);
+}
+
+function generateManualQR(qrData) {
+    const canvas = document.getElementById('barcodeCanvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    canvas.width = 256;
+    canvas.height = 256;
+    
+    // Create a QR-like pattern
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, 256, 256);
+    
+    // Generate pseudo-QR pattern based on data
+    const seed = qrData.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    const random = (x, y) => ((seed + x * 31 + y * 17) % 100) < 50;
+    
+    ctx.fillStyle = '#000000';
+    const moduleSize = 8;
+    const modules = Math.floor(256 / moduleSize);
+    
+    // Draw finder patterns (corners)
+    function drawFinderPattern(x, y) {
+        ctx.fillRect(x * moduleSize, y * moduleSize, 7 * moduleSize, 7 * moduleSize);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect((x + 1) * moduleSize, (y + 1) * moduleSize, 5 * moduleSize, 5 * moduleSize);
+        ctx.fillStyle = '#000000';
+        ctx.fillRect((x + 2) * moduleSize, (y + 2) * moduleSize, 3 * moduleSize, 3 * moduleSize);
+    }
+    
+    drawFinderPattern(0, 0);
+    drawFinderPattern(modules - 7, 0);
+    drawFinderPattern(0, modules - 7);
+    
+    // Draw data pattern
+    for (let x = 0; x < modules; x++) {
+        for (let y = 0; y < modules; y++) {
+            // Skip finder patterns
+            if ((x < 9 && y < 9) || (x >= modules - 8 && y < 9) || (x < 9 && y >= modules - 8)) {
+                continue;
+            }
+            
+            if (random(x, y)) {
+                ctx.fillRect(x * moduleSize, y * moduleSize, moduleSize, moduleSize);
+            }
+        }
+    }
+    
+    // Add text overlay
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillRect(60, 100, 136, 56);
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('QR CODE', 128, 120);
+    ctx.font = '12px Arial';
+    ctx.fillText('SCAN UNTUK ABSENSI', 128, 140);
+    
+    const now = new Date().toLocaleTimeString('id-ID');
+    ctx.font = '10px Arial';
+    ctx.fillText(now, 128, 155);
+    
+    console.log('Manual QR pattern generated');
+    showToast('info', 'QR Code pattern di-generate (fallback mode)');
+}
+
+function startCountdown() {
+    let seconds = 30;
+    const countdownElement = document.getElementById('countdown');
+    
+    if (countdownTimer) {
+        clearInterval(countdownTimer);
+    }
+    
+    countdownTimer = setInterval(() => {
+        seconds--;
+        if (countdownElement) {
+            countdownElement.textContent = seconds;
+            
+            // Change color when time is running out
+            if (seconds <= 5) {
+                countdownElement.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
+                countdownElement.style.animation = 'pulse 0.5s ease-in-out infinite';
+            } else if (seconds <= 10) {
+                countdownElement.style.background = 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)';
+                countdownElement.style.animation = 'none';
+            } else {
+                countdownElement.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                countdownElement.style.animation = 'none';
+            }
+        }
+        
+        if (seconds <= 0) {
+            clearInterval(countdownTimer);
+            seconds = 30;
+        }
+    }, 1000);
+}
+
+function updateClock() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    
+    const clockElement = document.getElementById('currentTime');
+    if (clockElement) {
+        clockElement.textContent = timeString;
+    }
+}
+
+function loadTodayStats() {
+    try {
+        console.log('All attendance data:', attendanceData);
+        
+        // Filter today's attendance
+        const today = new Date().toDateString();
+        const todayData = attendanceData.filter(record => {
+            const recordDate = new Date(record.timestamp).toDateString();
+            console.log(`Comparing: ${recordDate} === ${today}`);
+            return recordDate === today;
+        });
+        
+        console.log('Today\'s filtered data:', todayData);
+        
+        const countElement = document.getElementById('todayCount');
+        if (countElement) {
+            countElement.textContent = todayData.length;
+        }
+        
+        console.log(`Today's attendance count: ${todayData.length}`);
+        
+    } catch (error) {
+        console.error('Error loading today stats:', error);
+        // Set count to 0 if error
+        const countElement = document.getElementById('todayCount');
+        if (countElement) {
+            countElement.textContent = '0';
+        }
+    }
+}
+
+function showRiwayatGuru() {
+    document.getElementById('barcodeSection').style.display = 'none';
+    document.getElementById('riwayatSection').style.display = 'block';
+    
+    // Update date
+    const today = new Date().toLocaleDateString('id-ID', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    const dateElement = document.getElementById('todayDate');
+    if (dateElement) {
+        dateElement.textContent = `Tanggal: ${today}`;
+    }
+    
+    loadTodayHistory();
+}
+
+function loadTodayHistory() {
+    try {
+        console.log('Loading history - All data:', attendanceData);
+        
+        // Filter today's attendance
+        const today = new Date().toDateString();
+        const todayData = attendanceData.filter(record => {
+            const recordDate = new Date(record.timestamp).toDateString();
+            return recordDate === today;
+        });
+        
+        console.log('Today\'s history data:', todayData);
+        
+        // Sort by time (newest first)
+        todayData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        // Display real data only
+        displayHistoryData(todayData);
+    } catch (error) {
+        console.error('Error loading today history:', error);
+        displayHistoryData([]); // Show empty table on error
+    }
+}
+
+function displayHistoryData(data) {
+    const tbody = document.getElementById('todayHistory');
+    if (!tbody) {
+        console.error('todayHistory element not found!');
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #7f8c8d;">Belum ada yang absen hari ini</td></tr>';
+        return;
+    }
+    
+    data.forEach((item, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td style="font-weight: bold;">${index + 1}</td>
+            <td>${item.nama_siswa}</td>
+            <td><i class="fas fa-clock" style="margin-right: 5px; color: #667eea;"></i>${item.waktu}</td>
+            <td><span class="status-hadir">Hadir</span></td>
+        `;
+        tbody.appendChild(row);
+        
+        // Add subtle animation for new rows
+        row.style.opacity = '0';
+        row.style.transform = 'translateY(-10px)';
+        setTimeout(() => {
+            row.style.transition = 'all 0.3s ease';
+            row.style.opacity = '1';
+            row.style.transform = 'translateY(0)';
+        }, index * 50);
+    });
+}
+
+function showBarcode() {
+    document.getElementById('barcodeSection').style.display = 'block';
+    document.getElementById('riwayatSection').style.display = 'none';
+    
+    // Restart timers
+    generateQRCode();
+    startCountdown();
+    loadTodayStats();
+}
+
+function refreshQR() {
+    console.log('Manual QR refresh requested');
+    generateQRCode();
+    startCountdown();
+    showToast('success', 'QR Code berhasil di-refresh');
+}
+
+function refreshHistory() {
+    loadTodayHistory();
+    loadTodayStats();
+    showToast('success', 'Data berhasil di-refresh');
+}
+
+function exportToExcel() {
+    if (attendanceData.length === 0) {
+        showToast('warning', 'Tidak ada data untuk diekspor');
+        return;
+    }
+    
+    // Create CSV content
+    let csvContent = "No,Nama Siswa,Tanggal,Waktu,Status\n";
+    
+    attendanceData.forEach((item, index) => {
+        csvContent += `${index + 1},"${item.nama_siswa}","${item.tanggal}","${item.waktu}","${item.status}"\n`;
+    });
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `data_absensi_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast('success', 'Data berhasil diekspor ke CSV');
+}
+
+function logoutGuru() {
+    if (confirm('Apakah Anda yakin ingin logout?')) {
+        // Clear timers
+        if (qrTimer) clearInterval(qrTimer);
+        if (countdownTimer) clearInterval(countdownTimer);
+        
+        sessionStorage.removeItem('userSession');
+        sessionStorage.removeItem('userRole');
+        
+        showToast('success', 'Logout berhasil');
+        
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 1500);
+    }
+}
+
+function showToast(type, message) {
+    const toast = document.getElementById('toast');
+    if (!toast) {
+        console.log('Toast:', message);
+        return;
+    }
+    
+    const icon = toast.querySelector('.toast-icon');
+    const messageSpan = toast.querySelector('.toast-message');
+    
+    // Set icon based on type
+    let iconClass = 'fa-info-circle';
+    if (type === 'success') iconClass = 'fa-check-circle';
+    else if (type === 'error') iconClass = 'fa-exclamation-circle';
+    else if (type === 'warning') iconClass = 'fa-exclamation-triangle';
+    
+    if (icon) icon.className = 'toast-icon fas ' + iconClass;
+    if (messageSpan) messageSpan.textContent = message;
+    
+    // Set toast class
+    toast.className = 'toast toast-' + type;
+    toast.style.display = 'block';
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(100%)';
+    
+    // Animate in
+    setTimeout(() => {
+        toast.style.transition = 'all 0.3s ease';
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(0)';
+    }, 10);
+    
+    // Auto hide after 3 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 300);
+    }, 3000);
+}
+
+// Debug function for manual QR generation
+function debugGenerateQR() {
+    console.log('Debug: Manual QR generation');
+    generateQRCode();
+    showToast('info', 'Debug QR generation triggered');
+}
+
+// Function to simulate student attendance (for testing)
+function simulateAttendance(studentName) {
+    const now = new Date();
+    const attendanceRecord = {
+        nama_siswa: studentName,
+        timestamp: now.toISOString(),
+        tanggal: now.toLocaleDateString('id-ID'),
+        waktu: now.toLocaleTimeString('id-ID'),
+        status: 'Hadir'
+    };
+    
+    attendanceData.push(attendanceRecord);
+    console.log('Simulated attendance:', attendanceRecord);
+    
+    // Update stats immediately
+    loadTodayStats();
+    
+    // Show notification
+    showToast('success', `${studentName} berhasil absen`);
+    
+    // If history is currently shown, refresh it
+    if (document.getElementById('riwayatSection').style.display === 'block') {
+        loadTodayHistory();
+    }
+}
+
+// Function to clear all attendance data (for testing)
+function clearAttendanceData() {
+    if (confirm('Hapus semua data absensi? Ini tidak bisa dibatalkan!')) {
+        attendanceData = [];
+        loadTodayStats();
+        loadTodayHistory();
+        showToast('success', 'Data absensi berhasil dihapus');
+    }
+}
+
+// Function to add test data (for demonstration)
+function addTestData() {
+    const testStudents = [
+        'Ahmad Rizki',
+        'Siti Nurhaliza', 
+        'Budi Santoso',
+        'Diana Putri',
+        'Eko Prasetyo'
+    ];
+    
+    testStudents.forEach((name, index) => {
+        setTimeout(() => {
+            simulateAttendance(name);
+        }, index * 1000); // Stagger the additions by 1 second each
+    });
+}
+
+// Initialize when page loads completely
+window.addEventListener('load', function() {
+    console.log('Window loaded, forcing QR generation...');
+    
+    // Force generate QR immediately
+    setTimeout(() => {
+        console.log('Forcing QR generation...');
+        generateQRCode();
+    }, 500);
+    
+    // Double check after 2 seconds
+    setTimeout(() => {
+        const canvas = document.getElementById('barcodeCanvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, 256, 256);
+            let hasContent = false;
+            
+            // Check if canvas has any non-white content
+            for (let i = 0; i < imageData.data.length; i += 4) {
+                if (imageData.data[i] !== 255 || imageData.data[i+1] !== 255 || imageData.data[i+2] !== 255) {
+                    hasContent = true;
+                    break;
+                }
+            }
+            
+            if (!hasContent) {
+                console.log('Canvas still empty, forcing manual QR...');
+                generateManualQR(`ABSENSI-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`);
+            }
+        }
+    }, 2000);
+});
+
+// Console commands for testing (available in browser console)
+window.testFunctions = {
+    simulateAttendance,
+    clearAttendanceData,
+    addTestData,
+    viewData: () => console.log('Current attendance data:', attendanceData)
+};
+
+console.log('Test functions available:', Object.keys(window.testFunctions));
+console.log('Use testFunctions.addTestData() to add sample data');
+console.log('Use testFunctions.simulateAttendance("Nama Siswa") to add single attendance');
+console.log('Use testFunctions.clearAttendanceData() to clear all data');
+console.log('Use testFunctions.viewData() to view current data');
+  </script>
+</body>
+</html>

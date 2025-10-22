@@ -580,6 +580,91 @@ function onScanSuccess(decodedText, decodedResult) {
     submitAbsensi(currentUser, decodedText);
 }
 
+const userNIS = sessionStorage.getItem('userSession');
+
+fetch(`/api/history/${userNIS}`)
+  .then(res => res.json())
+  .then(data => tampilkanHistorySiswa(data.data));
+
+// Ambil NIS dari backend (pastikan sudah dikirim oleh Flask)
+const NIS = "{{ nis }}"; 
+const NAMA = "{{ nama }}";
+
+// Fungsi dipanggil saat QR code berhasil discan
+function onQRCodeScanned(nisScanned) {
+    // Validasi apakah QR cocok dengan akun siswa
+    if (nisScanned !== NIS) {
+        alert("QR tidak sesuai dengan akun Anda!");
+        return;
+    }
+    kirimAbsensiKeServer(nisScanned);
+}
+
+function kirimAbsensiKeServer(nis) {
+    fetch('/scan-absen', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ nis: nis })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+        if (data.status === 'success') {
+            loadRiwayatAbsensi(); // Refresh riwayat setelah absen
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Gagal mengirim absensi ke server.');
+    });
+}
+
+function loadRiwayatAbsensi() {
+    fetch(`/api/history/${NIS}`)
+    .then(response => response.json())
+    .then(data => {
+        if (Array.isArray(data)) {
+            renderRiwayatAbsensi(data);
+        } else {
+            console.warn("Format API tidak sesuai, data:", data);
+            renderRiwayatAbsensi([]);
+        }
+    })
+    .catch(error => {
+        console.error('Gagal mengambil riwayat:', error);
+        renderRiwayatAbsensi([]);
+    });
+}
+
+function renderRiwayatAbsensi(data) {
+    const tbody = document.getElementById('riwayatBody');
+    tbody.innerHTML = '';
+
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada riwayat absensi</td></tr>';
+        return;
+    }
+
+    data.forEach((item, index) => {
+        const tanggal = item.tanggal_hadir || item.tanggal || "-";
+        const waktu = item.waktu_hadir || item.waktu || "-";
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${tanggal}</td>
+            <td>${waktu}</td>
+            <td><span class="status-hadir">Hadir</span></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Jalankan otomatis ketika halaman dimuat
+document.addEventListener('DOMContentLoaded', loadRiwayatAbsensi);
+
 function onScanFailure(error) {
     // Handle scan failure silently to avoid spam
     // console.log('Scan failure:', error);

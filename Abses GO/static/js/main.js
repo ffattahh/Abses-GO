@@ -60,8 +60,11 @@ function loginSiswa() {
     .then(data => {
         if (data.success) {
             // Set session
-            sessionStorage.setItem('userSession', username);
+            sessionStorage.setItem('userSession', data.user); // NIS
             sessionStorage.setItem('userRole', 'siswa');
+            sessionStorage.setItem('namaSiswa', data.nama);
+            window.location.href = '/siswa';
+
             
             // Redirect to siswa page
             window.location.href = '/siswa';

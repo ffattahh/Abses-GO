@@ -1,4 +1,3 @@
-// guru.js - Final Version with complete attendance management
 let qrTimer;
 let countdownTimer;
 
@@ -129,6 +128,33 @@ function startCountdown() {
     }, 1000);
 }
 
+function refreshToken() {
+  fetch('/generate-qr-token') // Panggil endpoint yang kita buat
+    .then(res => res.json())
+    .then(data => {
+      const token = data.token;
+      
+      // DEBUG: Tampilkan token di console browser Guru
+      console.log('GURU SIDE - Token diterima dari server:', token);
+
+      // Hapus QR code lama (jika ada)
+      document.getElementById('qrcode').innerHTML = '';
+
+      // Buat QR code baru dengan token yang diterima
+      new QRCode(document.getElementById('qrcode'), {
+        text: token, // Pastikan yang dimasukkan adalah variabel 'token'
+        width: 256,
+        height: 256,
+      });
+
+      console.log('GURU SIDE - QR Code berhasil dibuat dengan token di atas.');
+    })
+    .catch(err => console.error('Gagal mengambil token baru:', err));
+}
+
+setInterval(refreshToken, 30000);
+refreshToken();
+
 // ================== CLOCK ==================
 function updateClock() {
     const now = new Date();
@@ -141,8 +167,11 @@ function updateClock() {
 function loadTodayStats() {
     try {
         const attendanceData = JSON.parse(localStorage.getItem('attendanceData') || '[]');
-        const today = new Date().toDateString();
-        const todayData = attendanceData.filter(record => new Date(record.timestamp).toDateString() === today);
+        const today = new Date().toLocaleDateString('id-ID');
+        const filtered = data.filter(item => {
+        const itemDate = new Date(item.tanggal).toLocaleDateString('id-ID');
+        return itemDate === today;
+        });
         const countElement = document.getElementById('todayCount');
         if (countElement) countElement.textContent = todayData.length;
     } catch (error) {
@@ -155,7 +184,11 @@ function loadTodayStats() {
 function showRiwayatGuru() {
     document.getElementById('barcodeSection').style.display = 'none';
     document.getElementById('riwayatSection').style.display = 'block';
-    const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const today = new Date().toLocaleDateString('id-ID');
+    const filtered = data.filter(item => {
+    const itemDate = new Date(item.tanggal).toLocaleDateString('id-ID');
+    return itemDate === today;
+    });
     document.getElementById('todayDate').textContent = `Tanggal: ${today}`;
     loadTodayHistory();
 }
@@ -163,10 +196,25 @@ function showRiwayatGuru() {
 function loadTodayHistory() {
     try {
         const attendanceData = JSON.parse(localStorage.getItem('attendanceData') || '[]');
-        const today = new Date().toDateString();
-        const todayData = attendanceData.filter(record => new Date(record.timestamp).toDateString() === today);
-        todayData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        displayHistoryData(todayData);
+        console.log("🔍 Isi attendanceData dari localStorage:", attendanceData);
+        // Format tanggal hari ini
+        const today = new Date().toISOString().split('T')[0]; // "2025-10-22"
+
+        // Filter data berdasarkan tanggal
+        const filtered = attendanceData.filter(item => {
+            const itemDate = new Date(item.tanggal).toISOString().split('T')[0];
+            return itemDate === today;
+        });
+
+        console.log("📅 Data hasil filter hari ini:", filtered);
+        // Urutkan dari waktu terbaru ke lama (jika ada field timestamp/waktu)
+        filtered.sort((a, b) => new Date(b.waktu) - new Date(a.waktu));
+
+        console.log("Today's filtered data:", filtered); // debug
+
+        // Tampilkan ke tabel
+        displayHistoryData(filtered);
+
     } catch (error) {
         console.error('Error loadTodayHistory:', error);
         displayHistoryData([]);
@@ -176,21 +224,29 @@ function loadTodayHistory() {
 function displayHistoryData(data) {
     const tbody = document.getElementById('todayHistory');
     tbody.innerHTML = '';
-    if (data.length === 0) {
+
+    if (!data || data.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;">Belum ada yang absen hari ini</td></tr>';
         return;
     }
+
     data.forEach((item, index) => {
+        const nama = item.nama_siswa || item.nama || 'Tidak diketahui';
+        const waktu = item.waktu || item.waktu_hadir || '-';
+        const status = item.status || 'Hadir';
+
         const row = `
             <tr>
                 <td>${index + 1}</td>
-                <td>${item.nama_siswa}</td>
-                <td>${item.waktu}</td>
-                <td><span class="status-hadir">${item.status || 'Hadir'}</span></td>
+                <td>${nama}</td>
+                <td>${waktu}</td>
+                <td><span class="status-hadir">${status}</span></td>
             </tr>
         `;
         tbody.innerHTML += row;
     });
+    console.log("Raw data:", attendanceData);
+    console.log("Today's filtered data:", filtered);
 }
 
 // ================== ACTION BUTTONS ==================
@@ -295,6 +351,45 @@ function clearAttendanceData() {
 
 function debugGenerateQR() {
     generateQRCode();
+}
+
+function loadHistoryGuru() {
+    fetch('/api/history')
+        .then(response => response.json())
+        .then(result => {
+            console.log("Data dari API:", result); // 👈 debug
+
+            if (result.status === 'success') {
+                const data = result.data;
+
+                // 🟩 Tambahkan ini untuk menyimpan ke localStorage
+                localStorage.setItem('attendanceData', JSON.stringify(data));
+
+                const tableBody = document.getElementById('history-table-body');
+                tableBody.innerHTML = "";
+
+                data.forEach((item, index) => {
+                    const row = `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${item.nis}</td>
+                            <td>${item.nama}</td>
+                            <td>${item.jurusan}</td>
+                            <td>${item.kelas}</td>
+                            <td>${item.tanggal_hadir}</td>
+                            <td>${item.waktu_hadir}</td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            } else {
+                alert("Gagal memuat riwayat absensi.");
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("Terjadi kesalahan saat mengambil data.");
+        });
 }
 
 // ================== ON LOAD ==================

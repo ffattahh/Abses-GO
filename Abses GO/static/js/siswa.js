@@ -9,18 +9,94 @@ function initializeAttendanceData() {
 }
 
 // Cek apakah user sudah login
-document.addEventListener('DOMContentLoaded', function() {
-    const userSession = sessionStorage.getItem('userSession');
-    const userRole = sessionStorage.getItem('userRole');
-    
-    if (!userSession || userRole !== 'siswa') {
-        window.location.href = '/';
+document.addEventListener("DOMContentLoaded", function() {
+    const nis = sessionStorage.getItem('userSession');
+    console.log("NIS dari session:", nis);
+    const nama = sessionStorage.getItem('namaSiswa');
+    const role = sessionStorage.getItem('userRole');
+
+    if (!nis || role !== 'siswa') {
+        alert('Session tidak valid, silakan login ulang.');
+        window.location.href = '/login';
         return;
     }
-    
-    initializeAttendanceData();
-    initializeScanner();
+
+    // tampilkan nama di header
+    document.getElementById('namaSiswa').innerText = nama + " (" + nis + ")";
+
+    // muat riwayat absensi
+    loadRiwayatAbsensi(nis);
 });
+
+function loadRiwayatAbsensi() {
+    const nis = sessionStorage.getItem('userSession'); // Ambil NIS dari session
+
+    if (!nis) {
+        console.error("NIS tidak ditemukan di sessionStorage");
+        renderRiwayatAbsensi([]); // tampilkan kosong
+        return;
+    }
+
+    fetch(`/api/history/${nis}`)
+        .then(response => response.json())
+        .then(data => {
+            if (Array.isArray(data)) {
+                renderRiwayatAbsensi(data);
+            } else if (data.data) {
+                // Jika API mengembalikan format { success, data: [...] }
+                renderRiwayatAbsensi(data.data);
+            } else {
+                console.warn("Format API tidak sesuai, data:", data);
+                renderRiwayatAbsensi([]);
+            }
+        })
+        .catch(error => {
+            console.error('Gagal mengambil riwayat:', error);
+            renderRiwayatAbsensi([]);
+        });
+}
+
+function tampilkanRiwayat(data) {
+    const container = document.getElementById('riwayatTabel');
+    container.innerHTML = '';
+
+    if (!data || data.length === 0) {
+        container.innerHTML = '<tr><td colspan="3">Belum ada riwayat absensi</td></tr>';
+        return;
+    }
+
+    data.forEach(item => {
+        const row = `
+            <tr>
+                <td>${item.tanggal}</td>
+                <td>${item.jam}</td>
+                <td>${item.status}</td>
+            </tr>`;
+        container.innerHTML += row;
+    });
+}
+
+function renderRiwayatAbsensi(data) {
+    const tbody = document.getElementById("riwayat-absen");
+    tbody.innerHTML = "";
+
+    if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Belum ada data absensi</td></tr>`;
+        return;
+    }
+
+    data.forEach((item, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${item.tanggal}</td>
+            <td>${item.waktu}</td>
+            <td>${item.kelas}</td>
+            <td>Hadir</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
 
 function initializeScanner() {
     try {
@@ -43,28 +119,57 @@ function initializeScanner() {
     }
 }
 
-function onScanSuccess(decodedText, decodedResult) {
-    console.log('QR Code scanned:', decodedText);
-    
-    // Validate QR code format (should start with ABSENSI-)
-    if (!decodedText.startsWith('ABSENSI-')) {
-        showToast('error', 'QR Code tidak valid untuk absensi');
+function kirimAbsensiKeServer() {
+    // Ambil NIS langsung dari session agar tidak bisa dimanipulasi
+    const nis = sessionStorage.getItem('userSession');
+    console.log("NIS dikirim:", nis);  // Debug setelah nis diambil
+
+    if (!nis) {
+        alert("Session tidak ditemukan, silakan login ulang.");
+        window.location.href = '/login';
         return;
     }
-    
-    // Process scan result
-    document.getElementById('scanResult').innerHTML = `
-        <div class="scan-success">
-            <i class="fas fa-check-circle"></i>
-            <p>Scan berhasil: ${decodedText}</p>
-        </div>
-    `;
-    
-    // Get current user name from session
-    const currentUser = sessionStorage.getItem('userSession');
-    
-    // Submit absensi with current user name
-    submitAbsensi(currentUser, decodedText);
+
+    fetch('/scan-absen', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ nis: nis })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+        if (data.status === 'success') {
+            loadRiwayatAbsensi(nis); // panggil history setelah sukses
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Gagal mengirim absensi ke server.');
+    });
+}
+
+scanner.onScan((content) => {
+    // Misalnya QR berisi NIS siswa
+    let nis = content;
+    kirimAbsensiKeServer(nis);
+});
+
+function onScanSuccess(decodedText, decodedResult) {
+  try {
+    html5QrcodeScanner.clear();
+  } catch (err) {
+    console.error("Gagal menghentikan scanner.", err);
+  }
+    console.log(`QR Kode terdeteksi: ${decodedText}`);
+    kirimAbsensiKeServer(decodedText);
+
+  // Tampilkan alert INI SEBAGAI BUKTI KODE BARU BERJALAN
+  alert("Kode baru berjalan! Halaman akan segera dialihkan.");
+
+  // Alihkan (redirect) browser ke URL yang didapat dari QR Code
+  window.location.href = decodedText;
 }
 
 function onScanFailure(error) {

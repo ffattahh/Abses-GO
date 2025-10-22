@@ -2,7 +2,6 @@ import mysql.connector
 from datetime import date, datetime 
 
 def connect_db(dbsekolah):
-    """Menghubungkan ke database berdasarkan nama yang diberikan."""
     try:
         conn = mysql.connector.connect(
             host="localhost",
@@ -10,14 +9,14 @@ def connect_db(dbsekolah):
             password="",
             database=dbsekolah
         )
+        print(f"✅ Koneksi ke {dbsekolah} berhasil!")
         return conn
-    except mysql.connector.Error as err:
-        print(f"[DATABASE] ❌ Gagal koneksi ke {dbsekolah}: {err}")
+    except Exception as e:
+        print(f"❌ Gagal koneksi ke {dbsekolah}: {e}")
         return None
 
 # --- FUNGSI ABSENSI ---
 
-# --- PERUBAHAN DIMULAI DI SINI ---
 def insert_absen(nis, nama, jurusan, kelas):
     """Memasukkan data absensi siswa, dengan pengecekan duplikat dan pencatatan waktu."""
     conn = connect_db("dbsekolah")
@@ -26,43 +25,38 @@ def insert_absen(nis, nama, jurusan, kelas):
 
     cursor = conn.cursor()
     
-    # 1. Dapatkan tanggal DAN waktu saat ini
+    # ✅ Dapatkan waktu penuh sebagai DATETIME
     now = datetime.now()
-    today_date = now.strftime("%Y-%m-%d")
-    current_time = now.strftime("%H:%M:%S")
+    today_date = now.strftime("%Y-%m-%d")          # untuk tanggal_hadir
+    full_datetime = now.strftime("%Y-%m-%d %H:%M:%S")  # untuk waktu_hadir (DATETIME)
 
     try:
-        # Pengecekan duplikat untuk siswa yang sama di tanggal yang sama
+        # Pengecekan duplikat: tetap pakai today_date
         cursor.execute("SELECT id FROM absensi WHERE nis=%s AND tanggal_hadir=%s", (nis, today_date))
         if cursor.fetchone():
             print(f"[DATABASE] ⚠️ Siswa dengan NIS {nis} sudah absen hari ini.")
             conn.close()
-            return False # Mengembalikan False jika sudah ada
+            return False
 
-        # 2. Ubah SQL INSERT untuk menyertakan kolom 'waktu_hadir'
+        # ✅ Kirim full_datetime ke kolom waktu_hadir
         sql = "INSERT INTO absensi (nis, nama, jurusan, kelas, tanggal_hadir, waktu_hadir) VALUES (%s, %s, %s, %s, %s, %s)"
-        
-        # 3. Tambahkan 'current_time' ke dalam data yang akan dieksekusi
-        values = (nis, nama, jurusan, kelas, today_date, current_time)
+        values = (nis, nama, jurusan, kelas, today_date, full_datetime)
         
         cursor.execute(sql, values)
         conn.commit()
         
         print(f"[DATABASE] ✅ Absen untuk siswa NIS {nis} berhasil disimpan.")
-        return True # Mengembalikan True jika berhasil
+        return True
 
     except mysql.connector.Error as err:
         print(f"[DATABASE] ❌ Gagal INSERT absen: {err}")
-        conn.rollback() # Batalkan perubahan jika terjadi error
-        return False # Mengembalikan False jika gagal
+        conn.rollback()
+        return False
 
     finally:
-        # Pastikan koneksi selalu ditutup
         if conn.is_connected():
             cursor.close()
             conn.close()
-# --- AKHIR PERUBAHAN ---
-
 
 def get_today_absen():
     """Mengambil semua data absensi untuk hari ini."""
@@ -116,16 +110,24 @@ def get_siswa(username, password):
     return result
     
 def get_siswa_by_nis(nis):
-    """Mencari data siswa berdasarkan NIS."""
+    """Ambil data siswa berdasarkan NIS."""
     conn = connect_db("dbsekolah")
-    if not conn: return None
+    if not conn:
+        return None
 
     cursor = conn.cursor(dictionary=True)
-    query = "SELECT * FROM siswa WHERE NIS = %s"
-    cursor.execute(query, (nis,))
-    result = cursor.fetchone()
-    conn.close()
-    return result
+    try:
+        cursor.execute("SELECT * FROM siswa WHERE NIS = %s", (nis,))
+        result = cursor.fetchone()
+        return result
+    except Exception as e:
+        print(f"Error ambil siswa: {e}")
+        return None
+    finally:
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
+            return result
 
 # --- FUNGSI GURU ---
 

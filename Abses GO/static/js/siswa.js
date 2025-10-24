@@ -119,6 +119,10 @@ function initializeScanner() {
     }
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+    initializeScanner();
+});
+
 function kirimAbsensiKeServer() {
     // Ambil NIS langsung dari session agar tidak bisa dimanipulasi
     const nis = sessionStorage.getItem('userSession');
@@ -131,22 +135,20 @@ function kirimAbsensiKeServer() {
     }
 
     fetch('/scan-absen', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ nis: nis })
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nis: nis })
     })
     .then(response => response.json())
     .then(data => {
-        alert(data.message);
+        alert(data.message); // akan menampilkan pesan "Anda sudah absen hari ini"
         if (data.status === 'success') {
-            loadRiwayatAbsensi(nis); // panggil history setelah sukses
+            loadRiwayatAbsensi(nis);
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('Gagal mengirim absensi ke server.');
+        alert('Gagal menghubungi server.');
+        console.error(error);
     });
 }
 
@@ -156,21 +158,25 @@ scanner.onScan((content) => {
     kirimAbsensiKeServer(nis);
 });
 
-function onScanSuccess(decodedText, decodedResult) {
-  try {
-    html5QrcodeScanner.clear();
-  } catch (err) {
-    console.error("Gagal menghentikan scanner.", err);
-  }
-    console.log(`QR Kode terdeteksi: ${decodedText}`);
-    kirimAbsensiKeServer(decodedText);
+function onScanSuccess(decodedText) {
+    console.log("NIS terdeteksi:", decodedText);
 
-  // Tampilkan alert INI SEBAGAI BUKTI KODE BARU BERJALAN
-  alert("Kode baru berjalan! Halaman akan segera dialihkan.");
-
-  // Alihkan (redirect) browser ke URL yang didapat dari QR Code
-  window.location.href = decodedText;
+    fetch('/scan-absen', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ nis: decodedText })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+    })
+    .catch(err => console.error("Error scan:", err));
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    let scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 200 });
+    scanner.render(onScanSuccess);
+});
 
 function onScanFailure(error) {
     // Handle scan failure silently

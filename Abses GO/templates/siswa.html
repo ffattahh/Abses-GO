@@ -397,6 +397,7 @@
         </div>
       </div>
       <div id="scanResult"></div>
+      <div id="qr-reader"></div>
     </div>
     
     <div class="button-group">
@@ -481,6 +482,25 @@
       </button>
     </div>
   </div>
+
+  <h2>📋 Riwayat Absensi</h2>
+
+  <table class="table" border="1" cellpadding="8" cellspacing="0" style="width:100%; text-align:center;">
+  <thead style="background:#f2f2f2;">
+    <tr>
+      <th>No</th>
+      <th>Tanggal</th>
+      <th>Waktu</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody id="riwayatBody">
+    <tr>
+      <td colspan="4" style="text-align:center;">Memuat data...</td>
+    </tr>
+  </tbody>
+  </table>
+
 
   <!-- Toast Notification -->
   <div id="toast" class="toast" style="display:none;">
@@ -663,7 +683,9 @@ function renderRiwayatAbsensi(data) {
 }
 
 // Jalankan otomatis ketika halaman dimuat
-document.addEventListener('DOMContentLoaded', loadRiwayatAbsensi);
+document.addEventListener("DOMContentLoaded", () => {
+    loadRiwayatAbsensi();
+});
 
 function onScanFailure(error) {
     // Handle scan failure silently to avoid spam

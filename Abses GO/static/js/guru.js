@@ -1,5 +1,7 @@
+// guru.js - Final Version with complete attendance management
 let qrTimer;
 let countdownTimer;
+const BASE_URL = window.location.origin;
 
 // ================== INIT LOCALSTORAGE ==================
 function initializeAttendanceData() {
@@ -47,7 +49,8 @@ function initializeGuru() {
     // Refresh data every 5s
     setInterval(() => {
         loadTodayStats();
-        if (document.getElementById('riwayatSection').style.display === 'block') {
+        const riwayatSection = document.getElementById('riwayatSection');
+        if (riwayatSection && riwayatSection.style.display === 'block') {
             loadTodayHistory();
         }
     }, 5000);
@@ -70,21 +73,28 @@ function generateQRCode() {
     const randomId = Math.random().toString(36).substring(2, 15);
     const qrData = `ABSENSI-${timestamp}-${randomId}`;
     
-    QRCode.toCanvas(canvas, qrData, {
-        width: 256,
-        height: 256,
-        margin: 2,
-        color: { dark: '#000000', light: '#FFFFFF' },
-        errorCorrectionLevel: 'M'
-    }, function (error) {
-        if (error) {
-            console.error('Error QR:', error);
-            showToast('error', 'Gagal membuat QR Code');
-            showQRPlaceholder();
-        } else {
-            console.log('QR Code berhasil dibuat:', qrData);
-        }
-    });
+    // Use QRCode library if available
+    if (typeof QRCode !== 'undefined' && QRCode.toCanvas) {
+        QRCode.toCanvas(canvas, qrData, {
+            width: 256,
+            height: 256,
+            margin: 2,
+            color: { dark: '#000000', light: '#FFFFFF' },
+            errorCorrectionLevel: 'M'
+        }, function (error) {
+            if (error) {
+                console.error('Error QR:', error);
+                showToast('error', 'Gagal membuat QR Code');
+                showQRPlaceholder();
+            } else {
+                console.log('QR Code berhasil dibuat:', qrData);
+            }
+        });
+        return;
+    }
+
+    // Fallback: manual draw
+    showQRPlaceholder();
 }
 
 function showQRPlaceholder() {
@@ -99,6 +109,32 @@ function showQRPlaceholder() {
     ctx.font = '16px Arial';
     ctx.textAlign = 'center';
     ctx.fillText('QR Code Loading...', 128, 128);
+}
+
+function generateAllQR() {
+    fetch('/generate-qr')
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            loadQRCodeGallery();
+        });
+}
+
+function loadQRCodeGallery() {
+    fetch('/api/get-all-siswa')
+        .then(res => res.json())
+        .then(data => {
+            const gallery = document.getElementById('qrGallery');
+            gallery.innerHTML = '';
+            data.forEach(siswa => {
+                gallery.innerHTML += `
+                    <div class="qr-item">
+                        <p>${siswa.Nama} (${siswa.NIS})</p>
+                        <img src="/static/qr/${siswa.NIS}.png" width="150">
+                    </div>
+                `;
+            });
+        });
 }
 
 // ================== COUNTDOWN ==================
@@ -129,31 +165,44 @@ function startCountdown() {
 }
 
 function refreshToken() {
-  fetch('/generate-qr-token') // Panggil endpoint yang kita buat
+  fetch(`${BASE_URL}/generate-qr-token`) // Panggil endpoint yang kita buat
     .then(res => res.json())
     .then(data => {
-      const token = data.token;
+      const token = data && data.token ? data.token : null;
+      if (!token) {
+        console.warn('Token tidak diterima dari server');
+        return;
+      }
       
-      // DEBUG: Tampilkan token di console browser Guru
       console.log('GURU SIDE - Token diterima dari server:', token);
 
-      // Hapus QR code lama (jika ada)
-      document.getElementById('qrcode').innerHTML = '';
+      const qrcodeContainer = document.getElementById('qrcode');
+      if (qrcodeContainer) qrcodeContainer.innerHTML = '';
 
-      // Buat QR code baru dengan token yang diterima
-      new QRCode(document.getElementById('qrcode'), {
-        text: token, // Pastikan yang dimasukkan adalah variabel 'token'
-        width: 256,
-        height: 256,
-      });
-
-      console.log('GURU SIDE - QR Code berhasil dibuat dengan token di atas.');
+      if (typeof QRCode !== 'undefined' && qrcodeContainer) {
+        try {
+          new QRCode(qrcodeContainer, {
+            text: token,
+            width: 256,
+            height: 256,
+          });
+          console.log('GURU SIDE - QR Code berhasil dibuat dengan token di atas.');
+        } catch (err) {
+          console.error('Gagal membuat QR di container qrcode:', err);
+        }
+      }
     })
     .catch(err => console.error('Gagal mengambil token baru:', err));
 }
 
-setInterval(refreshToken, 30000);
-refreshToken();
+// start token refresh if endpoint present
+try {
+  setInterval(refreshToken, 30000);
+  // initial call but only if endpoint available would respond; it's fine to call
+  refreshToken();
+} catch (e) {
+  console.warn('refreshToken scheduling failed:', e);
+}
 
 // ================== CLOCK ==================
 function updateClock() {
@@ -165,64 +214,72 @@ function updateClock() {
 
 // ================== STATS ==================
 function loadTodayStats() {
-    try {
-        const attendanceData = JSON.parse(localStorage.getItem('attendanceData') || '[]');
-        const today = new Date().toLocaleDateString('id-ID');
-        const filtered = data.filter(item => {
-        const itemDate = new Date(item.tanggal).toLocaleDateString('id-ID');
-        return itemDate === today;
-        });
-        const countElement = document.getElementById('todayCount');
-        if (countElement) countElement.textContent = todayData.length;
-    } catch (error) {
-        console.error('Error loadTodayStats:', error);
-        document.getElementById('todayCount').textContent = '0';
-    }
+  try {
+      const attendanceData = JSON.parse(localStorage.getItem('attendanceData') || '[]');
+      const today = new Date().toLocaleDateString('id-ID');
+      const todayData = attendanceData.filter(item => {
+          const itemDate = item && item.tanggal ? new Date(item.tanggal).toLocaleDateString('id-ID') : '';
+          return itemDate === today;
+      });
+      const countElement = document.getElementById('todayCount');
+      if (countElement) countElement.textContent = todayData.length;
+  } catch (error) {
+      console.error('Error loadTodayStats:', error);
+      const el = document.getElementById('todayCount');
+      if (el) el.textContent = '0';
+  }
 }
 
 // ================== HISTORY ==================
 function showRiwayatGuru() {
-    document.getElementById('barcodeSection').style.display = 'none';
-    document.getElementById('riwayatSection').style.display = 'block';
+    const barcodeSection = document.getElementById('barcodeSection');
+    const riwayatSection = document.getElementById('riwayatSection');
+    if (barcodeSection) barcodeSection.style.display = 'none';
+    if (riwayatSection) riwayatSection.style.display = 'block';
+
     const today = new Date().toLocaleDateString('id-ID');
-    const filtered = data.filter(item => {
-    const itemDate = new Date(item.tanggal).toLocaleDateString('id-ID');
-    return itemDate === today;
-    });
-    document.getElementById('todayDate').textContent = `Tanggal: ${today}`;
+    const dateEl = document.getElementById('todayDate');
+    if (dateEl) dateEl.textContent = `Tanggal: ${today}`;
+
     loadTodayHistory();
 }
 
 function loadTodayHistory() {
-    try {
-        const attendanceData = JSON.parse(localStorage.getItem('attendanceData') || '[]');
-        console.log("🔍 Isi attendanceData dari localStorage:", attendanceData);
-        // Format tanggal hari ini
-        const today = new Date().toISOString().split('T')[0]; // "2025-10-22"
+    // Ambil data langsung dari API, bukan localStorage
+    fetch('/api/history-guru-today')
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(result => {
+            if (result && result.success && Array.isArray(result.data)) {
+                // Simpan ke localStorage untuk keperluan offline/export
+                localStorage.setItem('attendanceData', JSON.stringify(result.data));
 
-        // Filter data berdasarkan tanggal
-        const filtered = attendanceData.filter(item => {
-            const itemDate = new Date(item.tanggal).toISOString().split('T')[0];
-            return itemDate === today;
+                // Filter hanya data hari ini
+                const todayISO = new Date().toISOString().split('T')[0];
+                const todayData = result.data.filter(item => {
+                    const itemDate = item && item.tanggal ? new Date(item.tanggal).toISOString().split('T')[0] : null;
+                    return itemDate === todayISO;
+                });
+
+                // Tampilkan
+                displayHistoryData(todayData);
+            } else {
+                console.warn("Format API tidak valid atau kosong:", result);
+                displayHistoryData([]);
+            }
+        })
+        .catch(error => {
+            console.error("❌ Gagal mengambil data absensi:", error);
+            displayHistoryData([]);
+            showToast('error', 'Gagal memuat data absensi');
         });
-
-        console.log("📅 Data hasil filter hari ini:", filtered);
-        // Urutkan dari waktu terbaru ke lama (jika ada field timestamp/waktu)
-        filtered.sort((a, b) => new Date(b.waktu) - new Date(a.waktu));
-
-        console.log("Today's filtered data:", filtered); // debug
-
-        // Tampilkan ke tabel
-        displayHistoryData(filtered);
-
-    } catch (error) {
-        console.error('Error loadTodayHistory:', error);
-        displayHistoryData([]);
-    }
 }
 
 function displayHistoryData(data) {
     const tbody = document.getElementById('todayHistory');
+    if (!tbody) return;
     tbody.innerHTML = '';
 
     if (!data || data.length === 0) {
@@ -231,28 +288,104 @@ function displayHistoryData(data) {
     }
 
     data.forEach((item, index) => {
-        const nama = item.nama_siswa || item.nama || 'Tidak diketahui';
-        const waktu = item.waktu || item.waktu_hadir || '-';
-        const status = item.status || 'Hadir';
+        const nama = item && (item.nama_siswa || item.nama) ? (item.nama_siswa || item.nama) : 'Tidak diketahui';
+        const waktu = item && (item.waktu || item.waktu_hadir) ? (item.waktu || item.waktu_hadir) : '-';
+        const tanggal = item && (item.tanggal || item.tanggal_hadir) ? (item.tanggal || item.tanggal_hadir) : '-';
 
         const row = `
-            <tr>
-                <td>${index + 1}</td>
-                <td>${nama}</td>
-                <td>${waktu}</td>
-                <td><span class="status-hadir">${status}</span></td>
-            </tr>
+        <tr>
+        <td>${index + 1}</td>
+        <td>${item && item.nis ? item.nis : '-'}</td>
+        <td>${nama}</td>
+        <td>${item && item.jurusan ? item.jurusan : '-'}</td>
+        <td>${item && item.kelas ? item.kelas : '-'}</td>
+        <td>${tanggal}</td>
+        <td>${waktu}</td>
+        </tr>
         `;
         tbody.innerHTML += row;
     });
-    console.log("Raw data:", attendanceData);
-    console.log("Today's filtered data:", filtered);
+
+    console.log("Displayed history data count:", data.length);
 }
+
+// 🔹 Fungsi ambil semua riwayat absensi dari backend
+function fetchGuruHistoryAll() {
+  console.log("🔄 Mengambil seluruh data absensi siswa...");
+
+  fetch('https://192.168.18.76:5000/api/history-guru-all') // ✅ gunakan IP server Flask
+    .then(res => res.json())
+    .then(result => {
+      if (result.success) {
+        console.log("✅ Data absensi dari server:", result.data);
+        displayGuruHistoryAll(result.data, result.count);
+      } else {
+        console.error("❌ Gagal:", result.message);
+        document.getElementById('guruAllHistory').innerHTML =
+          `<tr><td colspan="7" style="text-align:center; color:red;">${result.message}</td></tr>`;
+      }
+    })
+    .catch(err => {
+      console.error("🚨 Error fetch:", err);
+      document.getElementById('guruAllHistory').innerHTML =
+        `<tr><td colspan="7" style="text-align:center; color:red;">Gagal memuat data.</td></tr>`;
+    });
+}
+
+function displayGuruHistoryAll(data, totalCount) {
+  const tbody = document.getElementById('guruAllHistory');
+  const total = document.getElementById('guruTotalAll');
+
+  if (!data || data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Belum ada data absensi.</td></tr>`;
+    total.textContent = "Total seluruh data absensi: 0";
+    return;
+  }
+
+  let rows = '';
+  data.forEach((item, i) => {
+    rows += `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${item.nis}</td>
+        <td>${item.nama}</td>
+        <td>${item.jurusan}</td>
+        <td>${item.kelas}</td>
+        <td>${item.tanggal_hadir}</td>
+        <td>${item.waktu_hadir}</td>
+      </tr>`;
+  });
+  tbody.innerHTML = rows;
+  total.textContent = `Total seluruh data absensi: ${totalCount}`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  fetchGuruHistoryAll(); // tampilkan semua riwayat saat halaman dibuka
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Pastikan user role
+  const userSession = sessionStorage.getItem('userSession');
+  const userRole = sessionStorage.getItem('userRole');
+  if (!userSession || userRole !== 'guru') {
+      window.location.href = '/';
+      return;
+  }
+
+  // Inisialisasi data & dashboard
+  initializeAttendanceData();
+  initializeGuru();
+
+  // Tampilkan data riwayat
+  fetchGuruHistoryAll();
+});
 
 // ================== ACTION BUTTONS ==================
 function showBarcode() {
-    document.getElementById('barcodeSection').style.display = 'block';
-    document.getElementById('riwayatSection').style.display = 'none';
+    const bs = document.getElementById('barcodeSection');
+    const rs = document.getElementById('riwayatSection');
+    if (bs) bs.style.display = 'block';
+    if (rs) rs.style.display = 'none';
     generateQRCode();
     startCountdown();
     loadTodayStats();
@@ -278,7 +411,7 @@ function exportToExcel() {
     }
     let csvContent = "No,Nama Siswa,Tanggal,Waktu,Status\n";
     attendanceData.forEach((item, index) => {
-        csvContent += `${index + 1},"${item.nama_siswa}","${item.tanggal}","${item.waktu}","${item.status}"\n`;
+        csvContent += `${index + 1},"${item.nama_siswa || item.nama || ''}","${item.tanggal || ''}","${item.waktu || ''}","${item.status || ''}"\n`;
     });
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
@@ -326,7 +459,7 @@ function debugShowAttendanceData() {
     const parsedData = JSON.parse(data || '[]');
     console.log('Current attendance data:', parsedData);
     if (parsedData.length > 0) {
-        alert(`Found ${parsedData.length} records:\n\n` + parsedData.map(r => `${r.nama_siswa} - ${r.tanggal} ${r.waktu}`).join('\n'));
+        alert(`Found ${parsedData.length} records:\n\n` + parsedData.map(r => `${r.nama_siswa || r.nama} - ${r.tanggal} ${r.waktu}`).join('\n'));
     } else {
         alert('No attendance data found in localStorage');
     }
@@ -353,42 +486,43 @@ function debugGenerateQR() {
     generateQRCode();
 }
 
+// ================== LEGACY / UTILITY ==================
+// Bungkus fetch yang sebelumnya berjalan "liar" ke fungsi sehingga tidak auto dijalankan
 function loadHistoryGuru() {
-    fetch('/api/history')
+    fetch(`${BASE_URL}/api/history`, { credentials: 'include' })
         .then(response => response.json())
         .then(result => {
-            console.log("Data dari API:", result); // 👈 debug
+            console.log("Data dari API (loadHistoryGuru):", result); // debug
 
-            if (result.status === 'success') {
-                const data = result.data;
+            // struktur API mungkin berbeda, cek property
+            const data = (result && (result.data || result.results || result)) ? (result.data || result.results || result) : [];
 
-                // 🟩 Tambahkan ini untuk menyimpan ke localStorage
-                localStorage.setItem('attendanceData', JSON.stringify(data));
+            // Simpan ke localStorage
+            localStorage.setItem('attendanceData', JSON.stringify(data));
 
-                const tableBody = document.getElementById('history-table-body');
-                tableBody.innerHTML = "";
+            const tableBody = document.getElementById('history-table-body');
+            if (!tableBody) return;
 
-                data.forEach((item, index) => {
-                    const row = `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${item.nis}</td>
-                            <td>${item.nama}</td>
-                            <td>${item.jurusan}</td>
-                            <td>${item.kelas}</td>
-                            <td>${item.tanggal_hadir}</td>
-                            <td>${item.waktu_hadir}</td>
-                        </tr>
-                    `;
-                    tableBody.innerHTML += row;
-                });
-            } else {
-                alert("Gagal memuat riwayat absensi.");
-            }
+            tableBody.innerHTML = "";
+
+            data.forEach((item, index) => {
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${item.nis || '-'}</td>
+                        <td>${item.nama || '-'}</td>
+                        <td>${item.jurusan || '-'}</td>
+                        <td>${item.kelas || '-'}</td>
+                        <td>${item.tanggal_hadir || item.tanggal || '-'}</td>
+                        <td>${item.waktu_hadir || item.waktu || '-'}</td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
         })
         .catch(error => {
-            console.error("Error:", error);
-            alert("Terjadi kesalahan saat mengambil data.");
+            console.error("Error loadHistoryGuru:", error);
+            // jangan alert di produksi, cukup log
         });
 }
 

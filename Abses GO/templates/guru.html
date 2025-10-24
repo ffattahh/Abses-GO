@@ -445,6 +445,8 @@
       </button>
       <button class="btn btn-danger" onclick="logoutGuru()">
         <i class="fas fa-sign-out-alt"></i> Logout
+      <button onclick="generateAllQR()">Generate QR Semua Siswa</button>
+        <div id="qrGallery" class="qr-container"></div>
       </button>
     </div>
   </div>
@@ -551,6 +553,30 @@
       <span class="toast-message"></span>
     </div>
   </div>
+
+  <hr style="margin:40px 0;">
+
+  <section id="riwayatSemuaGuru">
+  <h3>📋 Riwayat Semua Siswa</h3>
+  <p id="guruTotalAll">Total seluruh data absensi: 0</p>
+
+  <table class="table" border="1" cellspacing="0" cellpadding="8">
+    <thead>
+      <tr>
+        <th>No</th>
+        <th>NIS</th>
+        <th>Nama</th>
+        <th>Jurusan</th>
+        <th>Kelas</th>
+        <th>Tanggal Hadir</th>
+        <th>Waktu Hadir</th>
+      </tr>
+    </thead>
+    <tbody id="guruAllHistory">
+      <tr><td colspan="7" style="text-align:center;">Memuat data...</td></tr>
+    </tbody>
+  </table>
+</section>
 
   <script>
     // ... Seluruh kode JavaScript Anda yang sudah ada tetap di sini ...
@@ -669,7 +695,9 @@
       
     // Render scanner di halaman
     html5QrcodeScanner.render(onScanSuccess);
-
+    if (document.getElementById('reader')) {
+    // inisialisasi scanner hanya jika elemen ada
+    }
 });
 
 function generateQRCode() {
@@ -947,7 +975,6 @@ function generateQRCode() {
   });
   }
 
-
     // Fungsi untuk ambil data absensi hari ini dari server
   function fetchTodayHistory() {
   fetch('/api/history-today')
@@ -1144,5 +1171,62 @@ function generateQRCode() {
   fetchTodayHistory(); // otomatis load data dari DB saat halaman dibuka
   });
   </script>
-</body>
+
+<!-- Panggil setelah file guru.js dimuat -->
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    console.log("📢 Halaman guru dimuat, memanggil fetchGuruHistoryAll()");
+    if (typeof fetchGuruHistoryAll === "function") {
+      fetchGuruHistoryAll();
+    } else {
+      console.error("❌ fetchGuruHistoryAll belum terdefinisi, pastikan file guru.js dimuat.");
+    }
+  });
+async function fetchGuruHistoryAll() {
+  console.log("📡 Mengambil seluruh data absensi siswa...");
+
+  const tbody = document.getElementById("guruAllHistory");
+  const totalText = document.getElementById("guruTotalAll");
+
+  try {
+    const response = await fetch('/api/history-guru-all');
+    const result = await response.json();
+
+    if (result.success && Array.isArray(result.data)) {
+      const data = result.data;
+      tbody.innerHTML = "";
+
+      data.forEach((item, index) => {
+  const row = `
+    <tr>
+      <td>${index + 1}</td>
+      <td>${item.nis}</td>
+      <td>${item.nama}</td>
+      <td>${item.jurusan}</td>
+      <td>${item.kelas}</td>
+      <td>${item.tanggal_hadir}</td>
+      <td>${formatWaktu(item.waktu_hadir)}</td>
+    </tr>`;
+  tbody.insertAdjacentHTML("beforeend", row);
+});
+
+function formatWaktu(datetimeString) {
+  if (!datetimeString) return '-';
+  return new Date(datetimeString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+      totalText.textContent = `Total seluruh data absensi: ${data.length}`;
+      console.log("✅ Data berhasil dimuat:", data.length);
+    } else {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Tidak ada data absensi.</td></tr>`;
+    }
+  } catch (error) {
+    console.error("❌ Gagal mengambil data absensi:", error);
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:red;">Gagal memuat data.</td></tr>`;
+  }
+}
+
+    <!-- JS utama halaman guru -->
+    </script> <src="/static/js/guru.js"> </script>
+  </body>
 </html>

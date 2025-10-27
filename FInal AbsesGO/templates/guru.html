@@ -1,0 +1,881 @@
+<!-- templates/guru.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard Guru</title>
+  <style>
+    :root {
+      --primary: #3484FF;
+      --primary-hover: #2d74e3;
+      --accent: #58D2FF;
+      --text-dark: #222;
+      --bg-light: #f4f6fb;
+      --radius: 0.75rem;
+      --shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Poppins", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg-light);
+      color: var(--text-dark);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      color: var(--primary);
+      font-size: 1.75rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .card {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 45rem;
+      margin-bottom: 2rem;
+    }
+
+    #btn-generate {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    #btn-generate:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    #qr-area {
+      margin-top: 1rem;
+      text-align: center;
+    }
+
+    #qr-area img {
+      margin-top: 0.75rem;
+      width: 20rem;
+      height: 20rem;
+      object-fit: contain;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    table th {
+      background: var(--primary);
+      color: #fff;
+      text-align: left;
+      padding: 0.75rem;
+    }
+
+    table td {
+      border-bottom: 1px solid #ddd;
+      padding: 0.6rem;
+    }
+
+    tr:nth-child(even) {
+      background: #f9fafc;
+    }
+
+    .logout {
+      margin-top: 1rem;
+      text-align: center;
+    }
+
+    .logout a {
+      text-decoration: none;
+      color: #fff;
+      background: #dc3545;
+      padding: 0.6rem 1.25rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      transition: background 0.3s ease;
+    }
+
+    .logout a:hover {
+      background: #c82333;
+    }
+
+    /* CRUD Button Styles */
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.3s;
+      margin: 0.25rem;
+    }
+
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #059669;
+    }
+
+    .btn-warning {
+      background: #f59e0b;
+      color: white;
+    }
+
+    .btn-warning:hover {
+      background: #d97706;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .btn-info {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-info:hover {
+      background: var(--primary-hover);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-content {
+      background: white;
+      margin: 3rem auto;
+      padding: 2rem;
+      width: 90%;
+      max-width: 500px;
+      border-radius: var(--radius);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      animation: slideDown 0.3s;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    @keyframes slideDown {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-header h2 {
+      color: var(--primary);
+      margin: 0;
+    }
+
+    .close {
+      font-size: 28px;
+      font-weight: bold;
+      color: #999;
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+
+    .close:hover {
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 0.5rem;
+      font-size: 0.95rem;
+      transition: border-color 0.3s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .alert {
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1.5rem;
+      animation: slideDown 0.3s;
+    }
+
+    .alert-success {
+      background: #d1fae5;
+      color: #065f46;
+      border-left: 4px solid #10b981;
+    }
+
+    .alert-error {
+      background: #fee2e2;
+      color: #991b1b;
+      border-left: 4px solid #ef4444;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+
+    /* Refresh Button Styles */
+    .btn-refresh {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      color: white;
+      border: none;
+      padding: 0.6rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(52, 132, 255, 0.3);
+    }
+
+    .btn-refresh:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(52, 132, 255, 0.4);
+    }
+
+    .btn-refresh:active {
+      transform: translateY(0);
+    }
+
+    .btn-refresh.loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .refresh-icon {
+      display: inline-block;
+      transition: transform 0.6s ease;
+      font-size: 1.1rem;
+    }
+
+    .btn-refresh.loading .refresh-icon {
+      animation: rotate 1s linear infinite;
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .last-update-time {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 0.5rem;
+      text-align: right;
+    }
+
+    .table-container {
+      width: 100%;
+      position: relative;
+    }
+
+    .table-container.updating {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    @media (max-width: 40rem) {
+      .card {
+        padding: 1rem;
+      }
+      table th, table td {
+        font-size: 0.8rem;
+      }
+      #qr-area img {
+        width: 12rem;
+        height: 12rem;
+      }
+      .modal-content {
+        padding: 1.5rem;
+        margin: 1rem;
+      }
+      .action-buttons {
+        flex-direction: column;
+      }
+      .btn {
+        width: 100%;
+      }
+      .card-header {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .card-header h2 {
+        font-size: 1.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Dashboard Guru - {{ nama }}</h1>
+
+  <!-- CARD QR -->
+  <div class="card">
+    <h2>Generate Token Absensi</h2>
+    <button id="btn-generate">Generate QR Token (5 menit)</button>
+    <div id="qr-area"></div>
+  </div>
+
+  <!-- CARD ABSENSI -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Riwayat Absensi (Terbaru)</h2>
+      <button class="btn-refresh" id="btn-refresh-absensi">
+        <span class="refresh-icon">↻</span>
+        Refresh
+      </button>
+    </div>
+    <div class="table-container" id="absensiTableContainer">
+      <table id="absensiTable">
+        <thead>
+          <tr>
+            <th>NIS</th>
+            <th>Nama</th>
+            <th>Kelas</th>
+            <th>Jurusan</th>
+            <th>Waktu</th>
+          </tr>
+        </thead>
+        <tbody id="absensiTableBody">
+          {% for a in absensi %}
+          <tr>
+            <td>{{ a.nis }}</td>
+            <td>{{ a.nama_siswa }}</td>
+            <td>{{ a.kelas }}</td>
+            <td>{{ a.jurusan}}</td>
+            <td>{{ a.waktu_absen }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="last-update-time" id="lastUpdateTime"></div>
+  </div>
+
+  <!-- CARD CRUD SISWA -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Manajemen Data Siswa</h2>
+      <button class="btn btn-info" onclick="openModal('add')">➕ Tambah Siswa</button>
+    </div>
+    
+    <div id="alertContainer"></div>
+    
+    <table id="siswaTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>NIS</th>
+          <th>Nama Siswa</th>
+          <th>Jurusan</th>
+          <th>Kelas</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="siswaTableBody">
+        <tr>
+          <td colspan="7" style="text-align: center;">Loading...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="logout">
+    <a href="/logout">Logout</a>
+  </div>
+
+  <!-- Modal Form CRUD -->
+  <div id="siswaModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Tambah Siswa</h2>
+        <span class="close" onclick="closeModal()">&times;</span>
+      </div>
+      <form id="siswaForm">
+        <input type="hidden" id="siswaId">
+        
+        <div class="form-group">
+          <label for="username">Username *</label>
+          <input type="text" id="username" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password *</label>
+          <input type="text" id="password" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="nis">NIS *</label>
+          <input type="text" id="nis" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="nama_siswa">Nama Siswa *</label>
+          <input type="text" id="nama_siswa" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="jurusan">Jurusan</label>
+          <input type="text" id="jurusan" placeholder="Contoh: RPL, TKJ">
+        </div>
+        
+        <div class="form-group">
+          <label for="kelas">Kelas</label>
+          <input type="text" id="kelas" placeholder="Contoh: 12A, 12B">
+        </div>
+        
+        <div class="action-buttons">
+          <button type="submit" class="btn btn-success">💾 Simpan</button>
+          <button type="button" class="btn btn-danger" onclick="closeModal()">❌ Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+  // ========================================
+  // FUNGSI ASLI - Generate QR Token
+  // ========================================
+  document.getElementById('btn-generate').addEventListener('click', async () => {
+    const res = await fetch('/generate_token', { method: 'POST' });
+    const j = await res.json();
+    if (j.status === 'success') {
+      const qrArea = document.getElementById('qr-area');
+      let waktu = j.expires_in;
+
+      qrArea.innerHTML = `
+        <p>Token valid <span id="countdown">${waktu}</span> detik</p>
+        <img src="${j.qr_url}" alt="QR">
+      `;
+
+      const timer = setInterval(() => {
+        waktu--;
+        document.getElementById('countdown').textContent = waktu;
+
+        if (waktu <= 0) {
+          clearInterval(timer);
+          qrArea.innerHTML = "<p style='color:red;'>Token sudah kedaluwarsa ❌</p>";
+        }
+      }, 1000);
+
+    } else {
+      alert('Gagal generate token: ' + (j.message || 'unknown'));
+    }
+  });
+
+  // ================================
+  // FUNGSI FORMAT WAKTU
+  // ================================
+  function formatDate(dateInput) {
+    if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateInput)) {
+    return dateInput; // ✅ Tidak diubah — ini WIB!
+    }
+    // Fallback (opsional)
+    const d = new Date(dateInput);
+      if (isNaN(d)) return String(dateInput);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+    // Jika parsing gagal, return string asli
+      if (isNaN(date.getTime())) {
+      return dateInput;
+    }
+
+    // Format ke YYYY-MM-DD HH:MM:SS
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
+
+  // ========================================
+  // FUNGSI BARU - REFRESH ABSENSI
+  // ========================================
+  function updateLastRefreshTime() {
+    const now = new Date();
+    const timeString = formatDate(now); // Gunakan fungsi yang sama
+    document.getElementById('lastUpdateTime').textContent = `Terakhir diupdate: ${timeString}`;
+  }
+
+  function refreshAbsensi() {
+    const btn = document.getElementById('btn-refresh-absensi');
+    const container = document.getElementById('absensiTableContainer');
+    const tbody = document.getElementById('absensiTableBody');
+    
+    // Tambah efek loading
+    btn.classList.add('loading');
+    container.classList.add('updating');
+    
+    // Fetch data absensi terbaru dari server
+    fetch('/api/absensi', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if(data.success) {
+        // Update tabel dengan data baru
+        tbody.innerHTML = '';
+        
+        if(data.data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Belum ada data absensi</td></tr>';
+        } else {
+          data.data.forEach(absen => {
+            const formattedTime = formatDate(absen.waktu_absen);
+            const row = `
+              <tr>
+                <td>${absen.nis || '-'}</td>
+                <td>${absen.nama_siswa || '-'}</td>
+                <td>${absen.kelas || '-'}</td>
+                <td>${absen.jurusan || '-'}</td>
+                <td>${formattedTime}</td>
+              </tr>
+            `;
+            tbody.innerHTML += row;
+          });
+        }
+        
+        // Update waktu refresh
+        updateLastRefreshTime();
+      } else {
+        alert('Gagal memuat data absensi: ' + (data.message || 'unknown'));
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Error: Tidak dapat terhubung ke server');
+    })
+    .finally(() => {
+      // Hapus efek loading
+      btn.classList.remove('loading');
+      container.classList.remove('updating');
+    });
+  }
+
+  // Event listener untuk tombol refresh
+  document.getElementById('btn-refresh-absensi').addEventListener('click', refreshAbsensi);
+
+  // Set waktu awal saat halaman dimuat
+  document.addEventListener('DOMContentLoaded', function() {
+    updateLastRefreshTime();
+    loadSiswa();
+  });
+
+  // ========================================
+  // FUNGSI CRUD SISWA
+  // ========================================
+  const API_URL = '/api/siswa';
+  
+  // Fungsi untuk load data siswa
+  function loadSiswa() {
+    fetch(API_URL, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if(data.success) {
+        displaySiswa(data.data);
+      } else {
+        showAlert('Error loading data: ' + data.message, 'error');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showAlert('Error: Tidak dapat terhubung ke server', 'error');
+    });
+  }
+  
+  // Fungsi untuk menampilkan data siswa di tabel
+  function displaySiswa(siswaList) {
+    const tbody = document.getElementById('siswaTableBody');
+    
+    if(siswaList.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Tidak ada data siswa</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = '';
+    siswaList.forEach(siswa => {
+      const row = `
+        <tr>
+          <td>${siswa.id_siswa}</td>
+          <td>${siswa.username}</td>
+          <td>${siswa.nis}</td>
+          <td>${siswa.nama_siswa}</td>
+          <td>${siswa.jurusan || '-'}</td>
+          <td>${siswa.kelas || '-'}</td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn btn-warning" onclick="editSiswa(${siswa.id_siswa})">✏️ Edit</button>
+              <button class="btn btn-danger" onclick="deleteSiswa(${siswa.id_siswa}, '${siswa.nama_siswa}')">🗑️ Hapus</button>
+            </div>
+          </td>
+        </tr>
+      `;
+      tbody.innerHTML += row;
+    });
+  }
+  
+  // Fungsi untuk membuka modal
+  function openModal(mode, siswaData = null) {
+    const modal = document.getElementById('siswaModal');
+    const modalTitle = document.getElementById('modalTitle');
+    
+    if(mode === 'add') {
+      modalTitle.textContent = 'Tambah Siswa Baru';
+      document.getElementById('siswaForm').reset();
+      document.getElementById('siswaId').value = '';
+    } else if(mode === 'edit') {
+      modalTitle.textContent = 'Edit Data Siswa';
+      document.getElementById('siswaId').value = siswaData.id_siswa;
+      document.getElementById('username').value = siswaData.username;
+      document.getElementById('password').value = siswaData.password;
+      document.getElementById('nis').value = siswaData.nis;
+      document.getElementById('nama_siswa').value = siswaData.nama_siswa;
+      document.getElementById('jurusan').value = siswaData.jurusan || '';
+      document.getElementById('kelas').value = siswaData.kelas || '';
+    }
+    
+    modal.style.display = 'block';
+  }
+  
+  // Fungsi untuk menutup modal
+  function closeModal() {
+    document.getElementById('siswaModal').style.display = 'none';
+  }
+  
+  // Handle form submit
+  document.getElementById('siswaForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const siswaId = document.getElementById('siswaId').value;
+    const formData = {
+      username: document.getElementById('username').value,
+      password: document.getElementById('password').value,
+      nis: document.getElementById('nis').value,
+      nama_siswa: document.getElementById('nama_siswa').value,
+      jurusan: document.getElementById('jurusan').value,
+      kelas: document.getElementById('kelas').value
+    };
+    
+    if(siswaId) {
+      updateSiswa(siswaId, formData);
+    } else {
+      addSiswa(formData);
+    }
+  });
+  
+  // Fungsi untuk menambah siswa
+  function addSiswa(data) {
+    fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+      if(result.success) {
+        showAlert('Siswa berhasil ditambahkan!', 'success');
+        closeModal();
+        loadSiswa();
+      } else {
+        showAlert('Error: ' + result.message, 'error');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showAlert('Error: Tidak dapat terhubung ke server', 'error');
+    });
+  }
+  
+  // Fungsi untuk edit siswa
+  function editSiswa(id) {
+    fetch(`${API_URL}/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => response.json())
+    .then(result => {
+      if(result.success) {
+        openModal('edit', result.data);
+      } else {
+        showAlert('Error: ' + result.message, 'error');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showAlert('Error: Tidak dapat terhubung ke server', 'error');
+    });
+  }
+  
+  // Fungsi untuk update siswa
+  function updateSiswa(id, data) {
+    fetch(`${API_URL}/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+      if(result.success) {
+        showAlert('Data siswa berhasil diupdate!', 'success');
+        closeModal();
+        loadSiswa();
+      } else {
+        showAlert('Error: ' + result.message, 'error');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showAlert('Error: Tidak dapat terhubung ke server', 'error');
+    });
+  }
+  
+  // Fungsi untuk hapus siswa
+  function deleteSiswa(id, nama) {
+    if(confirm(`Apakah Anda yakin ingin menghapus siswa "${nama}"?`)) {
+      fetch(`${API_URL}/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(result => {
+        if(result.success) {
+          showAlert('Siswa berhasil dihapus!', 'success');
+          loadSiswa();
+        } else {
+          showAlert('Error: ' + result.message, 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error: Tidak dapat terhubung ke server', 'error');
+      });
+    }
+  }
+  
+  // Fungsi untuk menampilkan alert
+  function showAlert(message, type) {
+    const alertContainer = document.getElementById('alertContainer');
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+    
+    alertContainer.innerHTML = `
+      <div class="alert ${alertClass}">
+        ${message}
+      </div>
+    `;
+    
+    setTimeout(() => {
+      alertContainer.innerHTML = '';
+    }, 5000);
+  }
+  
+  // Tutup modal ketika klik di luar modal
+  window.onclick = function(event) {
+    const modal = document.getElementById('siswaModal');
+    if (event.target == modal) {
+      closeModal();
+    }
+  }
+  </script>
+</body>
+</html>

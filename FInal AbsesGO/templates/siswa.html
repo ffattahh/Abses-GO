@@ -1,0 +1,229 @@
+<!-- templates/siswa.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard Siswa</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <style>
+    :root {
+      --primary: #3484FF;
+      --primary-hover: #2d74e3;
+      --accent: #58D2FF;
+      --text-dark: #222;
+      --bg-light: #f4f6fb;
+      --radius: 0.75rem;
+      --shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Poppins", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg-light);
+      color: var(--text-dark);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      color: var(--primary);
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+
+    p.intro {
+      margin-bottom: 1.5rem;
+      text-align: center;
+      color: #555;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 45rem;
+      margin-bottom: 2rem;
+    }
+
+    .camera-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    video {
+      width: 100%;
+      max-width: 22rem;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      background: #000;
+    }
+
+    #status {
+      margin-top: 0.75rem;
+      font-weight: 600;
+      color: var(--primary);
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    table th {
+      background: var(--primary);
+      color: #fff;
+      text-align: center;
+      padding: 0.75rem;
+    }
+
+    table td {
+      border-bottom: 1px solid #ddd;
+      padding: 0.6rem;
+      text-align: center;
+    }
+
+    tr:nth-child(even) {
+      background: #f9fafc;
+    }
+
+    .logout {
+      margin-top: 1rem;
+      text-align: center;
+    }
+
+    .logout a {
+      text-decoration: none;
+      color: #fff;
+      background: #dc3545;
+      padding: 0.6rem 1.25rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      transition: background 0.3s ease;
+    }
+
+    .logout a:hover {
+      background: #c82333;
+    }
+
+    @media (max-width: 40rem) {
+      .card {
+        padding: 1rem;
+      }
+      table th, table td {
+        font-size: 0.8rem;
+      }
+      video {
+        max-width: 18rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Halo, {{ nama }}</h1>
+  <p class="intro">Scan QR yang ditampilkan guru untuk absen otomatis.</p>
+
+  <!-- CARD SCAN -->
+  <div class="card camera-area">
+    <video id="video" autoplay muted></video>
+    <canvas id="canvas" style="display:none;"></canvas>
+    <p id="status">Status: menunggu scan...</p>
+  </div>
+
+  <!-- CARD RIWAYAT -->
+  <div class="card">
+    <h2>Riwayat Absensi</h2>
+    <table>
+      <tr>
+        <th>Nama</th>
+        <th>Kelas</th>
+        <th>Jurusan</th>
+        <th>Waktu</th>
+        <!-- <th>Token</th> -->
+      </tr>
+      {% for h in history %}
+      <tr>
+        <td>{{ h.nama_siswa }}</td>
+        <td>{{ h.kelas }}</td>
+        <td>{{ h.jurusan}}</td>
+        <td>{{ h.waktu_absen }}</td>
+        <!-- <td style="max-width:10rem; overflow:auto;">{{ h.token_qr }}</td> -->
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <div class="logout">
+    <a href="/logout">Logout</a>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const statusEl = document.getElementById('status');
+
+    function startCamera() {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        .then(stream => {
+          video.srcObject = stream;
+          video.setAttribute("playsinline", true);
+        })
+        .catch(err => {
+          statusEl.textContent = 'Gagal akses kamera: ' + err;
+          statusEl.style.color = "red";
+        });
+    }
+
+    function scanLoop() {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, canvas.width, canvas.height);
+        if (code) {
+          statusEl.textContent = 'Token ditemukan: ' + code.data.slice(0, 20) + '...';
+          fetch('/scan_token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: code.data })
+          })
+            .then(r => r.json())
+            .then(j => {
+              statusEl.textContent = j.message || JSON.stringify(j);
+              statusEl.style.color = j.status === "success" ? "green" : "red";
+            })
+            .catch(e => {
+              statusEl.textContent = 'Error kirim token: ' + e;
+              statusEl.style.color = "red";
+            });
+
+          // jeda scanning 3 detik supaya tidak spam
+          setTimeout(() => {
+            statusEl.textContent = 'Menunggu scan...';
+            statusEl.style.color = "var(--primary)";
+          }, 3000);
+        }
+      }
+      requestAnimationFrame(scanLoop);
+    }
+
+    startCamera();
+    requestAnimationFrame(scanLoop);
+  </script>
+</body>
+</html>

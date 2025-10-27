@@ -1,0 +1,164 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Absensi QR - Login</title>
+  <style>
+    :root {
+      --primary: #3484FF;
+      --primary-hover: #2d74e3;
+      --accent: #58D2FF;
+      --text-dark: #222;
+      --bg-gradient: linear-gradient(135deg, var(--primary), var(--accent));
+      --radius: 0.75rem;
+      --shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Poppins", sans-serif;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: var(--bg-gradient);
+      color: var(--text-dark);
+    }
+
+    .login-card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      width: 90%;
+      max-width: 28rem;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    h1 {
+      color: var(--text-dark);
+      font-size: 2rem;
+      margin-bottom: 1.25rem;
+    }
+
+    h2 {
+      color: #333;
+      font-size: 1.125rem;
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      align-items: center;
+    }
+
+    input {
+      width: 100%;
+      max-width: 22rem;
+      padding: 0.75rem 1rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 0.5rem;
+      font-size: 0.9rem;
+      background-color: #fafafa;
+      transition: all 0.25s ease;
+    }
+
+    input:hover { border-color: #b0b7c3; }
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background-color: #fff;
+      box-shadow: 0 0 0.4rem rgba(52, 132, 255, 0.35);
+    }
+
+    button {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      max-width: 22rem;
+    }
+
+    button:hover {
+      background: var(--accent);
+      color: #fff;
+      transform: translateY(-0.1rem);
+      box-shadow: 0 0.25rem 0.75rem rgba(52, 132, 255, 0.25);
+    }
+
+    .switch-buttons {
+      display: flex;
+      justify-content: center;
+      margin-top: 1.25rem;
+    }
+
+    .switch-buttons a {
+      display: inline-block;
+      width: 100%;
+      max-width: 22rem; /* ✅ sama kayak tombol utama */
+      text-decoration: none;
+      background: #f3f4f6;
+      color: var(--primary);
+      font-weight: 600;
+      padding: 0.6rem 0;
+      border-radius: 0.5rem;
+      border: 1.5px solid var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    .switch-buttons a:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-0.625rem); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h1>AbsesGO</h1>
+
+    {% if role == 'guru' %}
+      <h2>Login Guru</h2>
+      <form action="/login_guru" method="post">
+        <input name="username" placeholder="Username Guru" required />
+        <input name="password" type="password" placeholder="Password" required />
+        <button type="submit">Login Guru</button>
+      </form>
+      <div class="switch-buttons">
+        <a href="/?role=siswa">Login Siswa</a>
+      </div>
+
+    {% else %}
+      <h2>Login Siswa</h2>
+      <form action="/login_siswa" method="post">
+        <input name="username" placeholder="Username Siswa" required />
+        <input name="password" type="password" placeholder="Password" required />
+        <button type="submit">Login Siswa</button>
+      </form>
+      <div class="switch-buttons">
+        <a href="/?role=guru">Login Guru</a>
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>

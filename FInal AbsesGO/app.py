@@ -5,6 +5,9 @@ from database import (
 )
 import os, qrcode, uuid, subprocess, sys
 import mysql.connector
+import io
+from flask import send_file
+from openpyxl import Workbook
 from mysql.connector import Error
 from flask_cors import CORS
 from datetime import datetime, timedelta
@@ -155,6 +158,122 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
+@app.route('/export_absensi', methods=['GET'])
+def export_absensi():
+    """
+    Export riwayat absensi ke file Excel (.xlsx).
+    Optional query params:
+      - start_date (YYYY-MM-DD)
+      - end_date   (YYYY-MM-DD)
+    """
+    if 'guru' not in session:
+        return redirect(url_for('index'))
+
+    # Ambil parameter filter (opsional)
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+
+    # Ambil data absensi dari fungsi existing
+    # Asumsi get_all_absensi() mengembalikan list of dict
+    absensi_list = get_all_absensi()
+
+    # Jika ada filter tanggal, lakukan filter pada hasil (asumsi waktu_absen adalah datetime)
+    def in_range(item):
+        if not item.get('waktu_absen'):
+            return True
+        try:
+            dt = item['waktu_absen']
+            # Jika di DB hasil string, coba parse; bila sudah datetime, tetap
+            if isinstance(dt, str):
+                from datetime import datetime
+                # coba beberapa format umum
+                for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d'):
+                    try:
+                        dt = datetime.strptime(dt, fmt)
+                        break
+                    except:
+                        pass
+            # sekarang dt seharusnya datetime
+        except Exception:
+            return True
+
+        if start_date:
+            try:
+                from datetime import datetime
+                sd = datetime.strptime(start_date, '%Y-%m-%d')
+                if dt < sd:
+                    return False
+            except:
+                pass
+        if end_date:
+            try:
+                from datetime import datetime, timedelta
+                ed = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1) - timedelta(seconds=1)
+                if dt > ed:
+                    return False
+            except:
+                pass
+        return True
+
+    if start_date or end_date:
+        absensi_list = [it for it in absensi_list if in_range(it)]
+
+    # Buat workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Riwayat Absensi"
+
+    # Tentukan header kolom (ubah sesuai fields yang ada)
+    headers = ['ID Absen', 'ID Siswa', 'NIS', 'Nama Siswa', 'Waktu Absen', 'Keterangan']
+    ws.append(headers)
+
+    # Isi baris data
+    for item in absensi_list:
+        id_absen = item.get('id_absen') or item.get('id') or ''
+        id_siswa = item.get('id_siswa') or ''
+        nis = item.get('nis') or item.get('nis_siswa') or ''
+        nama = item.get('nama_siswa') or item.get('nama') or ''
+        waktu = item.get('waktu_absen') or item.get('waktu') or ''
+        # Format waktu jika datetime
+        try:
+            from datetime import datetime
+            if isinstance(waktu, datetime):
+                waktu_str = waktu.strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                waktu_str = str(waktu)
+        except:
+            waktu_str = str(waktu)
+        keterangan = item.get('keterangan') or item.get('status') or ''
+        ws.append([id_absen, id_siswa, nis, nama, waktu_str, keterangan])
+
+    # Atur lebar kolom sederhana (opsional)
+    for column_cells in ws.columns:
+        length = max((len(str(cell.value)) for cell in column_cells), default=0) + 2
+        col_letter = column_cells[0].column_letter
+        ws.column_dimensions[col_letter].width = min(length, 50)
+
+    # Simpan workbook ke bytes buffer dan kirim sebagai file
+    bio = io.BytesIO()
+    wb.save(bio)
+    bio.seek(0)
+
+    filename = f"riwayat_absensi_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    # Untuk Flask modern, gunakan download_name (Flask>=2.0) atau attachment_filename jika versi lama
+    try:
+        return send_file(
+            bio,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    except TypeError:
+        # fallback untuk Flask lama
+        return send_file(
+            bio,
+            as_attachment=True,
+            attachment_filename=filename,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
 
 # ========================================
 # API CRUD SISWA - REST API

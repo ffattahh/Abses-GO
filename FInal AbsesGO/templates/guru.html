@@ -398,42 +398,75 @@
     <button id="btn-generate">Generate QR Token (5 menit)</button>
     <div id="qr-area"></div>
   </div>
-
+  
   <!-- CARD ABSENSI -->
   <div class="card">
-    <div class="card-header">
-      <h2>Riwayat Absensi (Terbaru)</h2>
-      <button class="btn-refresh" id="btn-refresh-absensi">
-        <span class="refresh-icon">↻</span>
-        Refresh
-      </button>
-    </div>
-    <div class="table-container" id="absensiTableContainer">
-      <table id="absensiTable">
-        <thead>
-          <tr>
-            <th>NIS</th>
-            <th>Nama</th>
-            <th>Kelas</th>
-            <th>Jurusan</th>
-            <th>Waktu</th>
-          </tr>
-        </thead>
-        <tbody id="absensiTableBody">
-          {% for a in absensi %}
-          <tr>
-            <td>{{ a.nis }}</td>
-            <td>{{ a.nama_siswa }}</td>
-            <td>{{ a.kelas }}</td>
-            <td>{{ a.jurusan}}</td>
-            <td>{{ a.waktu_absen }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <div class="last-update-time" id="lastUpdateTime"></div>
+  <div class="card-header">
+    <h2>Riwayat Absensi (Terbaru)</h2>
   </div>
+
+  <div class="table-container" id="absensiTableContainer">
+    <table id="absensiTable">
+      <thead>
+        <tr>
+          <th>NIS</th>
+          <th>Nama</th>
+          <th>Kelas</th>
+          <th>Jurusan</th>
+          <th>Waktu</th>
+        </tr>
+      </thead>
+      <tbody id="absensiTableBody">
+        {% for a in absensi %}
+        <tr>
+          <td>{{ a.nis }}</td>
+          <td>{{ a.nama_siswa }}</td>
+          <td>{{ a.kelas }}</td>
+          <td>{{ a.jurusan }}</td>
+          <td>{{ a.waktu_absen }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="last-update-time" id="lastUpdateTime">
+    Terakhir diupdate: {{ last_update_time }}
+  </div>
+
+  <div class="button-container" style="
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin-top: 15px;">
+    <button id="btn-refresh-absensi" style="
+        background-color: #2196F3;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      ">
+      🔄 Refresh
+    </button>
+
+    <a href="/export_absensi" style="
+        background-color: #4CAF50;
+        color: white;
+        text-decoration: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      ">
+      📊 Export ke Excel
+    </a>
+  </div>
+  </div>
+
 
   <!-- CARD CRUD SISWA -->
   <div class="card">

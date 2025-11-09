@@ -29,7 +29,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2rem 1rem;
+      padding: 2rem 1rem 4rem;
     }
 
     h1 {
@@ -100,23 +100,47 @@
       background: #f9fafc;
     }
 
-    .logout {
-      margin-top: 1rem;
-      text-align: center;
-    }
-
-    .logout a {
-      text-decoration: none;
-      color: #fff;
-      background: #dc3545;
-      padding: 0.6rem 1.25rem;
+    /* Tombol umum */
+    .btn {
+      border: none;
       border-radius: 0.5rem;
+      padding: 0.6rem 1.25rem;
+      cursor: pointer;
       font-weight: 600;
-      transition: background 0.3s ease;
+      color: #fff;
+      transition: background 0.3s ease, transform 0.2s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
 
-    .logout a:hover {
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    /* Tombol khusus */
+    .btn-refresh {
+      background: var(--primary);
+    }
+    .btn-refresh:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-logout {
+      background: #dc3545;
+    }
+    .btn-logout:hover {
       background: #c82333;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 1rem;
+    }
+
+    .logout {
+      margin-top: 1.5rem;
+      text-align: center;
     }
 
     @media (max-width: 40rem) {
@@ -152,22 +176,28 @@
         <th>Kelas</th>
         <th>Jurusan</th>
         <th>Waktu</th>
-        <!-- <th>Token</th> -->
       </tr>
       {% for h in history %}
       <tr>
         <td>{{ h.nama_siswa }}</td>
         <td>{{ h.kelas }}</td>
-        <td>{{ h.jurusan}}</td>
+        <td>{{ h.jurusan }}</td>
         <td>{{ h.waktu_absen }}</td>
-        <!-- <td style="max-width:10rem; overflow:auto;">{{ h.token_qr }}</td> -->
       </tr>
       {% endfor %}
     </table>
+
+    <!-- Tombol Refresh -->
+    <div class="button-container">
+      <button id="btn-refresh-absensi" class="btn btn-refresh">
+        🔄 Refresh
+      </button>
+    </div>
   </div>
 
+  <!-- Tombol Logout terpisah di bawah -->
   <div class="logout">
-    <a href="/logout">Logout</a>
+    <a href="/logout" class="btn btn-logout">Logout</a>
   </div>
 
   <script>
@@ -212,7 +242,6 @@
               statusEl.style.color = "red";
             });
 
-          // jeda scanning 3 detik supaya tidak spam
           setTimeout(() => {
             statusEl.textContent = 'Menunggu scan...';
             statusEl.style.color = "var(--primary)";
@@ -221,6 +250,11 @@
       }
       requestAnimationFrame(scanLoop);
     }
+
+    // Event listener tombol refresh
+    document.getElementById('btn-refresh-absensi').addEventListener('click', () => {
+      location.reload();
+    });
 
     startCamera();
     requestAnimationFrame(scanLoop);

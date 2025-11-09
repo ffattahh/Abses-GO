@@ -405,6 +405,50 @@
     <h2>Riwayat Absensi (Terbaru)</h2>
   </div>
 
+  <div class="filter-container" style="
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;">
+
+  <label for="filterKelas">Kelas:</label>
+  <select id="filterKelas" style="
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;">
+    <option value="">Semua</option>
+    <option value="X">X</option>
+    <option value="XI">XI</option>
+    <option value="XII">XII</option>
+  </select>
+
+  <label for="filterJurusan">Jurusan:</label>
+  <select id="filterJurusan" style="
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;">
+    <option value="">Semua</option>
+    <option value="RPL">RPL</option>
+    <option value="TKJ">TKJ</option>
+  </select>
+
+  <label for="filterBulan">Bulan:</label>
+  <input type="month" id="filterBulan" style="
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;">
+
+  <button id="btnFilter" style="
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;">🔍 Filter</button>
+  </div>
+
   <div class="table-container" id="absensiTableContainer">
     <table id="absensiTable">
       <thead>
@@ -909,6 +953,79 @@
       closeModal();
     }
   }
+
+  <script>
+// ========================================
+// 🔰 FITUR FILTER & EXPORT ABSENSI
+// ========================================
+
+async function filterAbsensi() {
+  const kelas = document.getElementById('filterKelas').value;
+  const jurusan = document.getElementById('filterJurusan').value;
+  const bulan = document.getElementById('filterBulan').value;
+  const tbody = document.getElementById('absensiTableBody');
+  const container = document.getElementById('absensiTableContainer');
+
+  container.classList.add('updating');
+  try {
+    let url = '/api/absensi/filter?';
+    if (kelas) url += `kelas=${encodeURIComponent(kelas)}&`;
+    if (jurusan) url += `jurusan=${encodeURIComponent(jurusan)}&`;
+    if (bulan) url += `bulan=${encodeURIComponent(bulan)}&`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    tbody.innerHTML = '';
+    if (data.success && data.data.length > 0) {
+      data.data.forEach(absen => {
+        const waktu = formatDate(absen.waktu_absen);
+        tbody.innerHTML += `
+          <tr>
+            <td>${absen.nis}</td>
+            <td>${absen.nama_siswa}</td>
+            <td>${absen.kelas}</td>
+            <td>${absen.jurusan}</td>
+            <td>${waktu}</td>
+          </tr>`;
+      });
+    } else {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Tidak ada data sesuai filter</td></tr>`;
+    }
+    updateLastRefreshTime();
+  } catch (err) {
+    console.error('Error filter:', err);
+  } finally {
+    container.classList.remove('updating');
+  }
+}
+
+// Tombol Filter
+document.getElementById('btnFilter').addEventListener('click', filterAbsensi);
+
+// Tombol Reset
+document.getElementById('btnResetFilter').addEventListener('click', () => {
+  document.getElementById('filterKelas').value = '';
+  document.getElementById('filterJurusan').value = '';
+  document.getElementById('filterBulan').value = '';
+  refreshAbsensi();
+});
+
+// Tombol Export ke Excel mengikuti filter
+document.getElementById('btnExportExcel').addEventListener('click', () => {
+  const kelas = document.getElementById('filterKelas').value;
+  const jurusan = document.getElementById('filterJurusan').value;
+  const bulan = document.getElementById('filterBulan').value;
+
+  let url = '/export_absensi';
+  const params = [];
+  if (kelas) params.push(`kelas=${encodeURIComponent(kelas)}`);
+  if (jurusan) params.push(`jurusan=${encodeURIComponent(jurusan)}`);
+  if (bulan) params.push(`bulan=${encodeURIComponent(bulan)}`);
+  if (params.length > 0) url += '?' + params.join('&');
+
+  window.location.href = url; // otomatis download
+  });
   </script>
 </body>
 </html>

@@ -1,1031 +1,1275 @@
-<!-- templates/guru.html -->
 <!DOCTYPE html>
 <html lang="id">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dashboard Guru</title>
-  <style>
-    :root {
-      --primary: #3484FF;
-      --primary-hover: #2d74e3;
-      --accent: #58D2FF;
-      --text-dark: #222;
-      --bg-light: #f4f6fb;
-      --radius: 0.75rem;
-      --shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
-    }
-
-    * {
-      box-sizing: border-box;
-      font-family: "Poppins", sans-serif;
-    }
-
-    body {
-      margin: 0;
-      background: var(--bg-light);
-      color: var(--text-dark);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 2rem 1rem;
-    }
-
-    h1 {
-      color: var(--primary);
-      font-size: 1.75rem;
-      margin-bottom: 1.5rem;
-      text-align: center;
-    }
-
-    .card {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      background: #fff;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 1.5rem;
-      width: 100%;
-      max-width: 45rem;
-      margin-bottom: 2rem;
-    }
-
-    #btn-generate {
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      border-radius: 0.5rem;
-      padding: 0.75rem 1.25rem;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-
-    #btn-generate:hover {
-      background: var(--accent);
-      color: #fff;
-    }
-
-    #qr-area {
-      margin-top: 1rem;
-      text-align: center;
-    }
-
-    #qr-area img {
-      margin-top: 0.75rem;
-      width: 20rem;
-      height: 20rem;
-      object-fit: contain;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-      font-size: 0.9rem;
-    }
-
-    table th {
-      background: var(--primary);
-      color: #fff;
-      text-align: left;
-      padding: 0.75rem;
-    }
-
-    table td {
-      border-bottom: 1px solid #ddd;
-      padding: 0.6rem;
-    }
-
-    tr:nth-child(even) {
-      background: #f9fafc;
-    }
-
-    .logout {
-      margin-top: 1rem;
-      text-align: center;
-    }
-
-    .logout a {
-      text-decoration: none;
-      color: #fff;
-      background: #dc3545;
-      padding: 0.6rem 1.25rem;
-      border-radius: 0.5rem;
-      font-weight: 600;
-      transition: background 0.3s ease;
-    }
-
-    .logout a:hover {
-      background: #c82333;
-    }
-
-    /* CRUD Button Styles */
-    .btn {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 0.5rem;
-      cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: 600;
-      transition: all 0.3s;
-      margin: 0.25rem;
-    }
-
-    .btn-success {
-      background: #10b981;
-      color: white;
-    }
-
-    .btn-success:hover {
-      background: #059669;
-    }
-
-    .btn-warning {
-      background: #f59e0b;
-      color: white;
-    }
-
-    .btn-warning:hover {
-      background: #d97706;
-    }
-
-    .btn-danger {
-      background: #ef4444;
-      color: white;
-    }
-
-    .btn-danger:hover {
-      background: #dc2626;
-    }
-
-    .btn-info {
-      background: var(--primary);
-      color: white;
-    }
-
-    .btn-info:hover {
-      background: var(--primary-hover);
-    }
-
-    .action-buttons {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    /* Modal Styles */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      animation: fadeIn 0.3s;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    .modal-content {
-      background: white;
-      margin: 3rem auto;
-      padding: 2rem;
-      width: 90%;
-      max-width: 500px;
-      border-radius: var(--radius);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      animation: slideDown 0.3s;
-      max-height: 85vh;
-      overflow-y: auto;
-    }
-
-    @keyframes slideDown {
-      from {
-        transform: translateY(-50px);
-        opacity: 0;
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Dashboard Guru</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --primary-light: #dbeafe;
+        --accent: #06b6d4;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --text-dark: #1f2937;
+        --text-muted: #6b7280;
+        --bg-light: #f8fafc;
+        --bg-white: #ffffff;
+        --border: #e5e7eb;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
+        --radius: 12px;
+        --radius-sm: 8px;
       }
-      to {
-        transform: translateY(0);
-        opacity: 1;
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
-    }
 
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-    }
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: var(--text-dark);
+        padding: 2rem 1rem;
+      }
 
-    .modal-header h2 {
-      color: var(--primary);
-      margin: 0;
-    }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
 
-    .close {
-      font-size: 28px;
-      font-weight: bold;
-      color: #999;
-      cursor: pointer;
-      transition: color 0.3s;
-    }
+      /* Header */
+      .header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+        animation: fadeInDown 0.6s ease;
+      }
 
-    .close:hover {
-      color: #333;
-    }
+      .header h1 {
+        color: white;
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      }
 
-    .form-group {
-      margin-bottom: 1.25rem;
-    }
+      .header p {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1rem;
+      }
 
-    .form-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-      color: var(--text-dark);
-    }
-
-    .form-group input {
-      width: 100%;
-      padding: 0.75rem;
-      border: 2px solid #e5e7eb;
-      border-radius: 0.5rem;
-      font-size: 0.95rem;
-      transition: border-color 0.3s;
-    }
-
-    .form-group input:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
-
-    .alert {
-      padding: 1rem;
-      border-radius: 0.5rem;
-      margin-bottom: 1.5rem;
-      animation: slideDown 0.3s;
-    }
-
-    .alert-success {
-      background: #d1fae5;
-      color: #065f46;
-      border-left: 4px solid #10b981;
-    }
-
-    .alert-error {
-      background: #fee2e2;
-      color: #991b1b;
-      border-left: 4px solid #ef4444;
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-      margin-bottom: 1rem;
-    }
-
-    /* Refresh Button Styles */
-    .btn-refresh {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-      color: white;
-      border: none;
-      padding: 0.6rem 1rem;
-      border-radius: 0.5rem;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 8px rgba(52, 132, 255, 0.3);
-    }
-
-    .btn-refresh:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(52, 132, 255, 0.4);
-    }
-
-    .btn-refresh:active {
-      transform: translateY(0);
-    }
-
-    .btn-refresh.loading {
-      pointer-events: none;
-      opacity: 0.7;
-    }
-
-    .refresh-icon {
-      display: inline-block;
-      transition: transform 0.6s ease;
-      font-size: 1.1rem;
-    }
-
-    .btn-refresh.loading .refresh-icon {
-      animation: rotate 1s linear infinite;
-    }
-
-    @keyframes rotate {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    .last-update-time {
-      font-size: 0.85rem;
-      color: #666;
-      margin-top: 0.5rem;
-      text-align: right;
-    }
-
-    .table-container {
-      width: 100%;
-      position: relative;
-    }
-
-    .table-container.updating {
-      opacity: 0.6;
-      pointer-events: none;
-    }
-
-    @media (max-width: 40rem) {
+      /* Card Styles */
       .card {
-        padding: 1rem;
+        background: var(--bg-white);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-lg);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        animation: fadeInUp 0.6s ease;
+        transition: transform 0.3s ease;
       }
-      table th, table td {
-        font-size: 0.8rem;
+
+      .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
       }
-      #qr-area img {
-        width: 12rem;
-        height: 12rem;
-      }
-      .modal-content {
-        padding: 1.5rem;
-        margin: 1rem;
-      }
-      .action-buttons {
-        flex-direction: column;
-      }
-      .btn {
-        width: 100%;
-      }
+
       .card-header {
-        flex-direction: column;
-        gap: 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--border);
       }
+
       .card-header h2 {
-        font-size: 1.25rem;
+        color: var(--primary);
+        font-size: 1.5rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
       }
-    }
-  </style>
-</head>
-<body>
-  <h1>Dashboard Guru - {{ nama }}</h1>
 
-  <!-- CARD QR -->
-  <div class="card">
-    <h2>Generate Token Absensi</h2>
-    <button id="btn-generate">Generate QR Token (5 menit)</button>
-    <div id="qr-area"></div>
-  </div>
-  
-  <!-- CARD ABSENSI -->
-  <div class="card">
-  <div class="card-header">
-    <h2>Riwayat Absensi (Terbaru)</h2>
-  </div>
+      .card-icon {
+        font-size: 1.75rem;
+      }
 
-  <div class="filter-container" style="
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 15px;">
+      /* QR Section */
+      .qr-section {
+        text-align: center;
+      }
 
-  <label for="filterKelas">Kelas:</label>
-  <select id="filterKelas" style="
-      padding: 6px;
-      border-radius: 6px;
-      border: 1px solid #ccc;">
-    <option value="">Semua</option>
-    <option value="X">X</option>
-    <option value="XI">XI</option>
-    <option value="XII">XII</option>
-  </select>
-
-  <label for="filterJurusan">Jurusan:</label>
-  <select id="filterJurusan" style="
-      padding: 6px;
-      border-radius: 6px;
-      border: 1px solid #ccc;">
-    <option value="">Semua</option>
-    <option value="RPL">RPL</option>
-    <option value="TKJ">TKJ</option>
-  </select>
-
-  <label for="filterBulan">Bulan:</label>
-  <input type="month" id="filterBulan" style="
-      padding: 6px;
-      border-radius: 6px;
-      border: 1px solid #ccc;">
-
-  <button id="btnFilter" style="
-      background-color: #2196F3;
-      color: white;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 6px;
-      cursor: pointer;">🔍 Filter</button>
-  </div>
-
-  <div class="table-container" id="absensiTableContainer">
-    <table id="absensiTable">
-      <thead>
-        <tr>
-          <th>NIS</th>
-          <th>Nama</th>
-          <th>Kelas</th>
-          <th>Jurusan</th>
-          <th>Waktu</th>
-        </tr>
-      </thead>
-      <tbody id="absensiTableBody">
-        {% for a in absensi %}
-        <tr>
-          <td>{{ a.nis }}</td>
-          <td>{{ a.nama_siswa }}</td>
-          <td>{{ a.kelas }}</td>
-          <td>{{ a.jurusan }}</td>
-          <td>{{ a.waktu_absen }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  <div class="last-update-time" id="lastUpdateTime">
-    Terakhir diupdate: {{ last_update_time }}
-  </div>
-
-  <div class="button-container" style="
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 15px;
-      margin-top: 15px;">
-    <button id="btn-refresh-absensi" style="
-        background-color: #2196F3;
+      #btn-generate {
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--accent) 100%
+        );
         color: white;
         border: none;
-        padding: 8px 16px;
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
+        padding: 1rem 2rem;
+        font-size: 1rem;
+        font-weight: 600;
         cursor: pointer;
-        font-weight: 500;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      ">
-      🔄 Refresh
-    </button>
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
 
-    <a href="/export_absensi" style="
-        background-color: #4CAF50;
+      #btn-generate:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+      }
+
+      #btn-generate:active {
+        transform: translateY(0);
+      }
+
+      /* QR Code Specific Styles */
+      #qr-area {
+        margin-top: 1.5rem;
+        padding: 2rem;
+        background: linear-gradient(135deg, var(--bg-light) 0%, #ffffff 100%);
+        border-radius: var(--radius);
+        min-height: 150px;
+        border: 2px dashed var(--primary-light);
+        transition: all 0.3s ease;
+      }
+
+      #qr-area:hover {
+        border-color: var(--primary);
+        background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
+      }
+
+      #qr-area img {
+        margin: 1rem auto;
+        width: 200px;
+        height: 200px;
+        object-fit: contain;
+        border: 3px solid var(--primary-light);
+        border-radius: var(--radius-sm);
+        padding: 0.75rem;
+        background: white;
+        box-shadow: var(--shadow-md);
+        transition: all 0.3s ease;
+      }
+
+      #qr-area img:hover {
+        transform: scale(1.05);
+        box-shadow: var(--shadow-lg);
+      }
+
+      /* Countdown Animation */
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      #countdown {
+        font-weight: 700;
+        font-size: 1.3rem;
+        animation: pulse 2s infinite;
+        color: var(--primary);
+      }
+
+      /* Responsive QR Code */
+      @media (max-width: 768px) {
+        #qr-area {
+          padding: 1.5rem;
+        }
+
+        #qr-area img {
+          width: 180px;
+          height: 180px;
+        }
+      }
+
+      /* Buttons */
+      .btn {
+        padding: 0.625rem 1.25rem;
+        border: none;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      .btn-primary {
+        background: var(--primary);
         color: white;
-        text-decoration: none;
-        padding: 8px 16px;
-        border-radius: 6px;
+      }
+
+      .btn-primary:hover {
+        background: var(--primary-hover);
+      }
+
+      .btn-success {
+        background: var(--success);
+        color: white;
+      }
+
+      .btn-success:hover {
+        background: #059669;
+      }
+
+      .btn-warning {
+        background: var(--warning);
+        color: white;
+      }
+
+      .btn-warning:hover {
+        background: #d97706;
+      }
+
+      .btn-danger {
+        background: var(--danger);
+        color: white;
+      }
+
+      .btn-danger:hover {
+        background: #dc2626;
+      }
+
+      .btn-info {
+        background: var(--accent);
+        color: white;
+      }
+
+      .btn-info:hover {
+        background: #0891b2;
+      }
+
+      .btn-secondary {
+        background: var(--text-muted);
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background: #4b5563;
+      }
+
+      /* Button Group */
+      .button-group {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+      }
+
+      /* Table Styles */
+      .table-container {
+        width: 100%;
+        overflow-x: auto;
+        border-radius: var(--radius-sm);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .table-container.updating {
+        opacity: 0.6;
+        pointer-events: none;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+        background: white;
+      }
+
+      table thead {
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--accent) 100%
+        );
+        color: white;
+      }
+
+      table th {
+        text-align: left;
+        padding: 1rem;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      table td {
+        padding: 0.875rem 1rem;
+        border-bottom: 1px solid var(--border);
+        color: var(--text-dark);
+      }
+
+      table tbody tr {
+        transition: background 0.2s ease;
+      }
+
+      table tbody tr:hover {
+        background: var(--bg-light);
+      }
+
+      table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      /* Action Buttons in Table */
+      .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .action-buttons .btn {
+        padding: 0.5rem 0.875rem;
+        font-size: 0.85rem;
+      }
+
+      /* Last Update Time */
+      .last-update-time {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin-top: 1rem;
+        text-align: right;
+        font-style: italic;
+      }
+
+      /* Modal Styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        animation: fadeIn 0.3s ease;
+        backdrop-filter: blur(4px);
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .modal-content {
+        background: white;
+        margin: 3rem auto;
+        padding: 2rem;
+        width: 90%;
+        max-width: 500px;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-lg);
+        animation: slideDown 0.3s ease;
+        max-height: 85vh;
+        overflow-y: auto;
+      }
+
+      @keyframes slideDown {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--border);
+      }
+
+      .modal-header h2 {
+        color: var(--primary);
+        margin: 0;
+        font-size: 1.5rem;
+      }
+
+      .close {
+        font-size: 28px;
+        font-weight: bold;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: color 0.3s ease;
+        line-height: 1;
+      }
+
+      .close:hover {
+        color: var(--danger);
+      }
+
+      /* Form Styles */
+      .form-group {
+        margin-bottom: 1.25rem;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 0.9rem;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+      }
+
+      .form-group input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-light);
+      }
+
+      /* Alert Styles */
+      .alert {
+        padding: 1rem 1.25rem;
+        border-radius: var(--radius-sm);
+        margin-bottom: 1.5rem;
+        animation: slideDown 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
         font-weight: 500;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      ">
-      📊 Export ke Excel
-    </a>
-  </div>
-  </div>
+      }
 
+      .alert-success {
+        background: #d1fae5;
+        color: #065f46;
+        border-left: 4px solid var(--success);
+      }
 
-  <!-- CARD CRUD SISWA -->
-  <div class="card">
-    <div class="card-header">
-      <h2>Manajemen Data Siswa</h2>
-      <button class="btn btn-info" onclick="openModal('add')">➕ Tambah Siswa</button>
-    </div>
-    
-    <div id="alertContainer"></div>
-    
-    <table id="siswaTable">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Username</th>
-          <th>NIS</th>
-          <th>Nama Siswa</th>
-          <th>Jurusan</th>
-          <th>Kelas</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody id="siswaTableBody">
-        <tr>
-          <td colspan="7" style="text-align: center;">Loading...</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+      .alert-error {
+        background: #fee2e2;
+        color: #991b1b;
+        border-left: 4px solid var(--danger);
+      }
 
-  <div class="logout">
-    <a href="/logout">Logout</a>
-  </div>
+      /* Logout Button */
+      .logout-container {
+        text-align: center;
+        margin-top: 2rem;
+      }
 
-  <!-- Modal Form CRUD -->
-  <div id="siswaModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 id="modalTitle">Tambah Siswa</h2>
-        <span class="close" onclick="closeModal()">&times;</span>
+      .logout-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        color: white;
+        background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        padding: 0.875rem 2rem;
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+      }
+
+      .logout-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
+      }
+
+      /* Animations */
+      @keyframes fadeInDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes rotate {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .loading-icon {
+        display: inline-block;
+        animation: rotate 1s linear infinite;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        body {
+          padding: 1rem 0.5rem;
+        }
+
+        .header h1 {
+          font-size: 1.5rem;
+        }
+
+        .card {
+          padding: 1.25rem;
+        }
+
+        .card-header {
+          flex-direction: column;
+          gap: 1rem;
+          align-items: flex-start;
+        }
+
+        .card-header h2 {
+          font-size: 1.25rem;
+        }
+
+        .button-group {
+          flex-direction: column;
+        }
+
+        .button-group .btn {
+          width: 100%;
+          justify-content: center;
+        }
+
+        table {
+          font-size: 0.8rem;
+        }
+
+        table th,
+        table td {
+          padding: 0.625rem;
+        }
+
+        #qr-area img {
+          width: 200px;
+          height: 200px;
+        }
+
+        .modal-content {
+          margin: 1rem;
+          padding: 1.5rem;
+        }
+
+        .action-buttons {
+          flex-direction: column;
+        }
+
+        .action-buttons .btn {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+
+      /* Empty State */
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--text-muted);
+      }
+
+      .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <h1>🎓 Dashboard Guru</h1>
+        <p>Selamat datang, <strong>{{ nama }}</strong></p>
       </div>
-      <form id="siswaForm">
-        <input type="hidden" id="siswaId">
-        
-        <div class="form-group">
-          <label for="username">Username *</label>
-          <input type="text" id="username" required>
+
+      <!-- Card QR Token -->
+      <div class="card">
+        <div class="card-header">
+          <h2><span class="card-icon">📱</span> Generate Token Absensi</h2>
         </div>
-        
-        <div class="form-group">
-          <label for="password">Password *</label>
-          <input type="text" id="password" required>
+        <div class="qr-section">
+          <button id="btn-generate">
+            <span>🔐</span> Generate QR Token (5 menit)
+          </button>
+          <div id="qr-area">
+            <p style="color: var(--text-muted)">
+              Klik tombol di atas untuk membuat QR Code absensi
+            </p>
+          </div>
         </div>
-        
-        <div class="form-group">
-          <label for="nis">NIS *</label>
-          <input type="text" id="nis" required>
+      </div>
+
+      <!-- Card Absensi -->
+      <div class="card">
+        <div class="card-header">
+          <h2><span class="card-icon">📋</span> Riwayat Absensi</h2>
         </div>
-        
-        <div class="form-group">
-          <label for="nama_siswa">Nama Siswa *</label>
-          <input type="text" id="nama_siswa" required>
+
+        <!-- Table -->
+        <div class="table-container" id="absensiTableContainer">
+          <table id="absensiTable">
+            <thead>
+              <tr>
+                <th>NIS</th>
+                <th>Nama Siswa</th>
+                <th>Kelas</th>
+                <th>Jurusan</th>
+                <th>Waktu Absen</th>
+              </tr>
+            </thead>
+            <tbody id="absensiTableBody">
+              {% for a in absensi %}
+              <tr>
+                <td>{{ a.nis }}</td>
+                <td>{{ a.nama_siswa }}</td>
+                <td>{{ a.kelas }}</td>
+                <td>{{ a.jurusan }}</td>
+                <td>{{ a.waktu_absen }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-        
-        <div class="form-group">
-          <label for="jurusan">Jurusan</label>
-          <input type="text" id="jurusan" placeholder="Contoh: RPL, TKJ">
+
+        <div class="last-update-time" id="lastUpdateTime">
+          Terakhir diupdate: {{ last_update_time }}
         </div>
-        
-        <div class="form-group">
-          <label for="kelas">Kelas</label>
-          <input type="text" id="kelas" placeholder="Contoh: 12A, 12B">
+
+        <!-- Action Buttons -->
+        <div class="button-group">
+          <button id="btn-refresh-absensi" class="btn btn-primary">
+            <span class="refresh-icon">🔄</span> Refresh Data
+          </button>
+          <button id="btnExportExcel" class="btn btn-success">
+            <span>📥</span> Export Excel
+          </button>
         </div>
-        
-        <div class="action-buttons">
-          <button type="submit" class="btn btn-success">💾 Simpan</button>
-          <button type="button" class="btn btn-danger" onclick="closeModal()">❌ Batal</button>
+      </div>
+
+      <!-- Card CRUD Siswa -->
+      <div class="card">
+        <div class="card-header">
+          <h2><span class="card-icon">👥</span> Manajemen Data Siswa</h2>
+          <button class="btn btn-info" onclick="openModal('add')">
+            <span>➕</span> Tambah Siswa
+          </button>
         </div>
-      </form>
+
+        <div id="alertContainer"></div>
+
+        <div class="table-container">
+          <table id="siswaTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>NIS</th>
+                <th>Nama Siswa</th>
+                <th>Jurusan</th>
+                <th>Kelas</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="siswaTableBody">
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 2rem">
+                  <div class="loading-icon">⏳</div>
+                  Memuat data...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Logout -->
+      <div class="logout-container">
+        <a href="/logout" class="logout-btn"> <span>🚪</span> Logout </a>
+      </div>
     </div>
-  </div>
 
-  <script>
-  // ========================================
-  // FUNGSI ASLI - Generate QR Token
-  // ========================================
-  document.getElementById('btn-generate').addEventListener('click', async () => {
-    const res = await fetch('/generate_token', { method: 'POST' });
-    const j = await res.json();
-    if (j.status === 'success') {
-      const qrArea = document.getElementById('qr-area');
-      let waktu = j.expires_in;
+    <!-- Modal Form CRUD -->
+    <div id="siswaModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modalTitle">Tambah Siswa</h2>
+          <span class="close" onclick="closeModal()">&times;</span>
+        </div>
+        <form id="siswaForm">
+          <input type="hidden" id="siswaId" />
 
-      qrArea.innerHTML = `
-        <p>Token valid <span id="countdown">${waktu}</span> detik</p>
-        <img src="${j.qr_url}" alt="QR">
+          <div class="form-group">
+            <label for="username">Username *</label>
+            <input
+              type="text"
+              id="username"
+              required
+              placeholder="Masukkan username"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password *</label>
+            <input
+              type="text"
+              id="password"
+              required
+              placeholder="Masukkan password"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="nis">NIS *</label>
+            <input type="text" id="nis" required placeholder="Masukkan NIS" />
+          </div>
+
+          <div class="form-group">
+            <label for="nama_siswa">Nama Siswa *</label>
+            <input
+              type="text"
+              id="nama_siswa"
+              required
+              placeholder="Masukkan nama lengkap"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="jurusan">Jurusan</label>
+            <input type="text" id="jurusan" placeholder="Contoh: RPL, TKJ" />
+          </div>
+
+          <div class="form-group">
+            <label for="kelas">Kelas</label>
+            <input type="text" id="kelas" placeholder="Contoh: XII RPL 1" />
+          </div>
+
+          <div class="button-group">
+            <button type="submit" class="btn btn-success" style="flex: 1">
+              <span>💾</span> Simpan
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              onclick="closeModal()"
+              style="flex: 1"
+            >
+              <span>❌</span> Batal
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      // ========================================
+      // FUNGSI GENERATE QR TOKEN
+      // ========================================
+      document
+        .getElementById("btn-generate")
+        .addEventListener("click", async function () {
+          const btn = this;
+          const qrArea = document.getElementById("qr-area");
+
+          btn.disabled = true;
+          btn.innerHTML = '<span class="loading-icon">⏳</span> Generating...';
+
+          try {
+            const response = await fetch("/generate_token", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log("QR Response:", data);
+
+            if (data.status === "success") {
+              let waktu = data.expires_in || 300;
+
+              qrArea.innerHTML = `
+                <div style="text-align: center;">
+                    <p style="color: var(--success); font-weight: 600; margin-bottom: 1rem;">
+                        ✅ Token berhasil digenerate!
+                    </p>
+                    <p>Token valid: <span id="countdown" style="color: var(--primary); font-weight: 700; font-size: 1.2rem;">${waktu}</span> detik</p>
+                    <img src="${data.qr_url}" alt="QR Code Absensi" style="margin: 1rem auto;">
+                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.5rem;">
+                        Scan QR code ini untuk absensi
+                    </p>
+                </div>
+            `;
+
+              startCountdown(waktu, qrArea);
+            } else {
+              throw new Error(data.message || "Gagal generate token");
+            }
+          } catch (error) {
+            console.error("Error generating QR:", error);
+            qrArea.innerHTML = `
+            <div style="text-align: center; color: var(--danger);">
+                <p style="font-weight: 600;">❌ Gagal generate token</p>
+                <p style="font-size: 0.9rem;">${error.message}</p>
+            </div>
+        `;
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = "<span>🔐</span> Generate QR Token (5 menit)";
+          }
+        });
+
+      // ========================================
+      // FUNGSI COUNTDOWN TIMER
+      // ========================================
+      function startCountdown(duration, qrArea) {
+        let timer = duration;
+        const countdownElement = document.getElementById("countdown");
+
+        const countdownInterval = setInterval(() => {
+          countdownElement.textContent = timer;
+
+          if (timer <= 60) {
+            countdownElement.style.color = "var(--danger)";
+          } else if (timer <= 120) {
+            countdownElement.style.color = "var(--warning)";
+          }
+
+          if (timer <= 0) {
+            clearInterval(countdownInterval);
+            qrArea.innerHTML = `
+                <div style="text-align: center;">
+                    <p style="color: var(--danger); font-weight: 600;">❌ Token sudah kedaluwarsa</p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        Klik tombol "Generate QR Token" untuk membuat token baru
+                    </p>
+                </div>
+            `;
+          }
+
+          timer--;
+        }, 1000);
+
+        return countdownInterval;
+      }
+
+      // ========================================
+      // AUTO-REFRESH TOKEN
+      // ========================================
+      function setupAutoRefresh() {
+        setInterval(() => {
+          const qrArea = document.getElementById("qr-area");
+          const hasActiveToken = qrArea.querySelector("img") !== null;
+
+          if (hasActiveToken) {
+            console.log("🔄 Auto-refreshing QR token...");
+            document.getElementById("btn-generate").click();
+          }
+        }, 300000);
+      }
+
+      // ========================================
+      // FUNGSI FORMAT WAKTU
+      // ========================================
+      function formatDate(dateInput) {
+        if (!dateInput) return "-";
+        if (
+          typeof dateInput === "string" &&
+          /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateInput)
+        ) {
+          return dateInput;
+        }
+        try {
+          const d = new Date(dateInput);
+          if (isNaN(d)) return String(dateInput);
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+            2,
+            "0"
+          )}-${String(d.getDate()).padStart(2, "0")} ${String(
+            d.getHours()
+          ).padStart(2, "0")}:${String(d.getMinutes()).padStart(
+            2,
+            "0"
+          )}:${String(d.getSeconds()).padStart(2, "0")}`;
+        } catch (e) {
+          return String(dateInput);
+        }
+      }
+
+      // ========================================
+      // Alert Function
+      // ========================================
+      function showAlert(message, type) {
+        const alertContainer = document.getElementById("alertContainer");
+        const alertClass = type === "success" ? "alert-success" : "alert-error";
+        const icon = type === "success" ? "✅" : "❌";
+
+        const alertDiv = document.createElement("div");
+        alertDiv.className = `alert ${alertClass}`;
+        alertDiv.innerHTML = `
+          <span>${icon}</span>
+          <span>${message}</span>
       `;
 
-      const timer = setInterval(() => {
-        waktu--;
-        document.getElementById('countdown').textContent = waktu;
+        alertContainer.appendChild(alertDiv);
 
-        if (waktu <= 0) {
-          clearInterval(timer);
-          qrArea.innerHTML = "<p style='color:red;'>Token sudah kedaluwarsa ❌</p>";
-        }
-      }, 1000);
-
-    } else {
-      alert('Gagal generate token: ' + (j.message || 'unknown'));
-    }
-  });
-
-  // ================================
-  // FUNGSI FORMAT WAKTU
-  // ================================
-  function formatDate(dateInput) {
-    if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateInput)) {
-    return dateInput; // ✅ Tidak diubah — ini WIB!
-    }
-    // Fallback (opsional)
-    const d = new Date(dateInput);
-      if (isNaN(d)) return String(dateInput);
-        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
-    // Jika parsing gagal, return string asli
-      if (isNaN(date.getTime())) {
-      return dateInput;
-    }
-
-    // Format ke YYYY-MM-DD HH:MM:SS
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-  }
-
-  // ========================================
-  // FUNGSI BARU - REFRESH ABSENSI
-  // ========================================
-  function updateLastRefreshTime() {
-    const now = new Date();
-    const timeString = formatDate(now); // Gunakan fungsi yang sama
-    document.getElementById('lastUpdateTime').textContent = `Terakhir diupdate: ${timeString}`;
-  }
-
-  function refreshAbsensi() {
-    const btn = document.getElementById('btn-refresh-absensi');
-    const container = document.getElementById('absensiTableContainer');
-    const tbody = document.getElementById('absensiTableBody');
-    
-    // Tambah efek loading
-    btn.classList.add('loading');
-    container.classList.add('updating');
-    
-    // Fetch data absensi terbaru dari server
-    fetch('/api/absensi', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
+        setTimeout(() => {
+          if (alertDiv.parentNode) {
+            alertDiv.remove();
+          }
+        }, 5000);
       }
-    })
-    .then(response => response.json())
-    .then(data => {
-      if(data.success) {
-        // Update tabel dengan data baru
-        tbody.innerHTML = '';
-        
-        if(data.data.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Belum ada data absensi</td></tr>';
-        } else {
-          data.data.forEach(absen => {
-            const formattedTime = formatDate(absen.waktu_absen);
-            const row = `
+
+      // ========================================
+      // Refresh Absensi
+      // ========================================
+      function updateLastRefreshTime() {
+        const now = new Date();
+        const timeString = formatDate(now);
+        document.getElementById(
+          "lastUpdateTime"
+        ).textContent = `Terakhir diupdate: ${timeString}`;
+      }
+
+      function refreshAbsensi() {
+        const btn = document.getElementById("btn-refresh-absensi");
+        const container = document.getElementById("absensiTableContainer");
+        const tbody = document.getElementById("absensiTableBody");
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-icon">⏳</span> Loading...';
+        container.classList.add("updating");
+
+        fetch("/api/absensi", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              tbody.innerHTML = "";
+
+              if (data.data.length === 0) {
+                tbody.innerHTML = `
               <tr>
-                <td>${absen.nis || '-'}</td>
-                <td>${absen.nama_siswa || '-'}</td>
-                <td>${absen.kelas || '-'}</td>
-                <td>${absen.jurusan || '-'}</td>
-                <td>${formattedTime}</td>
+                <td colspan="5">
+                  <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <p>Belum ada data absensi</p>
+                  </div>
+                </td>
               </tr>
             `;
-            tbody.innerHTML += row;
+              } else {
+                data.data.forEach((absen) => {
+                  const formattedTime = formatDate(absen.waktu_absen);
+                  const row = `
+                <tr>
+                  <td>${absen.nis || "-"}</td>
+                  <td>${absen.nama_siswa || "-"}</td>
+                  <td>${absen.kelas || "-"}</td>
+                  <td>${absen.jurusan || "-"}</td>
+                  <td>${formattedTime}</td>
+                </tr>
+              `;
+                  tbody.innerHTML += row;
+                });
+              }
+
+              updateLastRefreshTime();
+              showAlert("Data absensi berhasil dimuat ulang", "success");
+            } else {
+              showAlert(
+                "Gagal memuat data absensi: " + (data.message || "unknown"),
+                "error"
+              );
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            showAlert("Error: Tidak dapat terhubung ke server", "error");
+          })
+          .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="refresh-icon">🔄</span> Refresh Data';
+            container.classList.remove("updating");
           });
-        }
-        
-        // Update waktu refresh
-        updateLastRefreshTime();
-      } else {
-        alert('Gagal memuat data absensi: ' + (data.message || 'unknown'));
       }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('Error: Tidak dapat terhubung ke server');
-    })
-    .finally(() => {
-      // Hapus efek loading
-      btn.classList.remove('loading');
-      container.classList.remove('updating');
-    });
-  }
 
-  // Event listener untuk tombol refresh
-  document.getElementById('btn-refresh-absensi').addEventListener('click', refreshAbsensi);
+      // ========================================
+      // Export Excel
+      // ========================================
+      function exportExcel() {
+        window.location.href = '/export_absensi';
+      }
 
-  // Set waktu awal saat halaman dimuat
-  document.addEventListener('DOMContentLoaded', function() {
-    updateLastRefreshTime();
-    loadSiswa();
-  });
+      // ========================================
+      // CRUD Siswa Functions
+      // ========================================
+      function loadSiswaData() {
+        fetch("/api/siswa")
+          .then((response) => response.json())
+          .then((data) => {
+            const tbody = document.getElementById("siswaTableBody");
+            if (data.success) {
+              if (data.data.length === 0) {
+                tbody.innerHTML = `
+                            <tr>
+                                <td colspan="7">
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon">👥</div>
+                                        <p>Belum ada data siswa</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+              } else {
+                tbody.innerHTML = "";
+                data.data.forEach((siswa) => {
+                  const row = `
+                                <tr>
+                                    <td>${siswa.id_siswa}</td>
+                                    <td>${siswa.username}</td>
+                                    <td>${siswa.nis}</td>
+                                    <td>${siswa.nama_siswa}</td>
+                                    <td>${siswa.jurusan || "-"}</td>
+                                    <td>${siswa.kelas || "-"}</td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-warning" onclick="editSiswa(${
+                                              siswa.id_siswa
+                                            })">
+                                                <span>✏️</span> Edit
+                                            </button>
+                                            <button class="btn btn-danger" onclick="deleteSiswa(${
+                                              siswa.id_siswa
+                                            })">
+                                                <span>🗑️</span> Hapus
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                  tbody.innerHTML += row;
+                });
+              }
+            } else {
+              showAlert("Gagal memuat data siswa: " + data.message, "error");
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            showAlert("Error memuat data siswa", "error");
+          });
+      }
 
-  // ========================================
-  // FUNGSI CRUD SISWA
-  // ========================================
-  const API_URL = '/api/siswa';
-  
-  // Fungsi untuk load data siswa
-  function loadSiswa() {
-    fetch(API_URL, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      if(data.success) {
-        displaySiswa(data.data);
-      } else {
-        showAlert('Error loading data: ' + data.message, 'error');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      showAlert('Error: Tidak dapat terhubung ke server', 'error');
-    });
-  }
-  
-  // Fungsi untuk menampilkan data siswa di tabel
-  function displaySiswa(siswaList) {
-    const tbody = document.getElementById('siswaTableBody');
-    
-    if(siswaList.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Tidak ada data siswa</td></tr>';
-      return;
-    }
-    
-    tbody.innerHTML = '';
-    siswaList.forEach(siswa => {
-      const row = `
-        <tr>
-          <td>${siswa.id_siswa}</td>
-          <td>${siswa.username}</td>
-          <td>${siswa.nis}</td>
-          <td>${siswa.nama_siswa}</td>
-          <td>${siswa.jurusan || '-'}</td>
-          <td>${siswa.kelas || '-'}</td>
-          <td>
-            <div class="action-buttons">
-              <button class="btn btn-warning" onclick="editSiswa(${siswa.id_siswa})">✏️ Edit</button>
-              <button class="btn btn-danger" onclick="deleteSiswa(${siswa.id_siswa}, '${siswa.nama_siswa}')">🗑️ Hapus</button>
-            </div>
-          </td>
-        </tr>
-      `;
-      tbody.innerHTML += row;
-    });
-  }
-  
-  // Fungsi untuk membuka modal
-  function openModal(mode, siswaData = null) {
-    const modal = document.getElementById('siswaModal');
-    const modalTitle = document.getElementById('modalTitle');
-    
-    if(mode === 'add') {
-      modalTitle.textContent = 'Tambah Siswa Baru';
-      document.getElementById('siswaForm').reset();
-      document.getElementById('siswaId').value = '';
-    } else if(mode === 'edit') {
-      modalTitle.textContent = 'Edit Data Siswa';
-      document.getElementById('siswaId').value = siswaData.id_siswa;
-      document.getElementById('username').value = siswaData.username;
-      document.getElementById('password').value = siswaData.password;
-      document.getElementById('nis').value = siswaData.nis;
-      document.getElementById('nama_siswa').value = siswaData.nama_siswa;
-      document.getElementById('jurusan').value = siswaData.jurusan || '';
-      document.getElementById('kelas').value = siswaData.kelas || '';
-    }
-    
-    modal.style.display = 'block';
-  }
-  
-  // Fungsi untuk menutup modal
-  function closeModal() {
-    document.getElementById('siswaModal').style.display = 'none';
-  }
-  
-  // Handle form submit
-  document.getElementById('siswaForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const siswaId = document.getElementById('siswaId').value;
-    const formData = {
-      username: document.getElementById('username').value,
-      password: document.getElementById('password').value,
-      nis: document.getElementById('nis').value,
-      nama_siswa: document.getElementById('nama_siswa').value,
-      jurusan: document.getElementById('jurusan').value,
-      kelas: document.getElementById('kelas').value
-    };
-    
-    if(siswaId) {
-      updateSiswa(siswaId, formData);
-    } else {
-      addSiswa(formData);
-    }
-  });
-  
-  // Fungsi untuk menambah siswa
-  function addSiswa(data) {
-    fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(result => {
-      if(result.success) {
-        showAlert('Siswa berhasil ditambahkan!', 'success');
-        closeModal();
-        loadSiswa();
-      } else {
-        showAlert('Error: ' + result.message, 'error');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      showAlert('Error: Tidak dapat terhubung ke server', 'error');
-    });
-  }
-  
-  // Fungsi untuk edit siswa
-  function editSiswa(id) {
-    fetch(`${API_URL}/${id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    .then(response => response.json())
-    .then(result => {
-      if(result.success) {
-        openModal('edit', result.data);
-      } else {
-        showAlert('Error: ' + result.message, 'error');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      showAlert('Error: Tidak dapat terhubung ke server', 'error');
-    });
-  }
-  
-  // Fungsi untuk update siswa
-  function updateSiswa(id, data) {
-    fetch(`${API_URL}/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(result => {
-      if(result.success) {
-        showAlert('Data siswa berhasil diupdate!', 'success');
-        closeModal();
-        loadSiswa();
-      } else {
-        showAlert('Error: ' + result.message, 'error');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      showAlert('Error: Tidak dapat terhubung ke server', 'error');
-    });
-  }
-  
-  // Fungsi untuk hapus siswa
-  function deleteSiswa(id, nama) {
-    if(confirm(`Apakah Anda yakin ingin menghapus siswa "${nama}"?`)) {
-      fetch(`${API_URL}/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-      .then(response => response.json())
-      .then(result => {
-        if(result.success) {
-          showAlert('Siswa berhasil dihapus!', 'success');
-          loadSiswa();
+      function openModal(type, id = null) {
+        const modal = document.getElementById("siswaModal");
+        const title = document.getElementById("modalTitle");
+        const form = document.getElementById("siswaForm");
+
+        if (type === "add") {
+          title.textContent = "Tambah Siswa";
+          form.reset();
+          document.getElementById("siswaId").value = "";
         } else {
-          showAlert('Error: ' + result.message, 'error');
+          title.textContent = "Edit Siswa";
+          fetch(`/api/siswa/${id}`)
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.success) {
+                document.getElementById("siswaId").value = data.data.id_siswa;
+                document.getElementById("username").value = data.data.username;
+                document.getElementById("password").value = data.data.password;
+                document.getElementById("nis").value = data.data.nis;
+                document.getElementById("nama_siswa").value =
+                  data.data.nama_siswa;
+                document.getElementById("jurusan").value =
+                  data.data.jurusan || "";
+                document.getElementById("kelas").value = data.data.kelas || "";
+              }
+            });
         }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        showAlert('Error: Tidak dapat terhubung ke server', 'error');
+
+        modal.style.display = "block";
+      }
+
+      function closeModal() {
+        document.getElementById("siswaModal").style.display = "none";
+      }
+
+      function editSiswa(id) {
+        openModal("edit", id);
+      }
+
+      function deleteSiswa(id) {
+        if (confirm("Apakah Anda yakin ingin menghapus siswa ini?")) {
+          fetch(`/api/siswa/${id}`, { method: "DELETE" })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.success) {
+                showAlert("Siswa berhasil dihapus", "success");
+                loadSiswaData();
+              } else {
+                showAlert("Gagal menghapus siswa: " + data.message, "error");
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              showAlert("Error menghapus siswa", "error");
+            });
+        }
+      }
+
+      // Handle form submission
+      document
+        .getElementById("siswaForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          const id = document.getElementById("siswaId").value;
+          const method = id ? "PUT" : "POST";
+          const url = id ? `/api/siswa/${id}` : "/api/siswa";
+
+          const formData = {
+            username: document.getElementById("username").value,
+            password: document.getElementById("password").value,
+            nis: document.getElementById("nis").value,
+            nama_siswa: document.getElementById("nama_siswa").value,
+            jurusan: document.getElementById("jurusan").value,
+            kelas: document.getElementById("kelas").value,
+          };
+
+          fetch(url, {
+            method: method,
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(formData),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.success) {
+                showAlert(data.message, "success");
+                closeModal();
+                loadSiswaData();
+              } else {
+                showAlert(data.message, "error");
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              showAlert("Error menyimpan data", "error");
+            });
+        });
+
+      // ========================================
+      // Event Listeners
+      // ========================================
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("🚀 Initializing dashboard...");
+
+        // Event listener untuk tombol export excel
+        const btnExportExcel = document.getElementById("btnExportExcel");
+        if (btnExportExcel) {
+          btnExportExcel.addEventListener("click", exportExcel);
+          console.log("✅ Export button event listener added");
+        }
+
+        // Event listener untuk tombol refresh
+        const btnRefresh = document.getElementById("btn-refresh-absensi");
+        if (btnRefresh) {
+          btnRefresh.addEventListener("click", refreshAbsensi);
+          console.log("✅ Refresh button event listener added");
+        }
+
+        // Muat data siswa saat halaman dimuat
+        loadSiswaData();
+
+        // Muat data absensi saat halaman dimuat
+        refreshAbsensi();
+
+        // Inisialisasi waktu update
+        updateLastRefreshTime();
+
+        // Setup auto-refresh untuk QR token
+        setupAutoRefresh();
+
+        console.log("✅ Dashboard initialized successfully");
       });
-    }
-  }
-  
-  // Fungsi untuk menampilkan alert
-  function showAlert(message, type) {
-    const alertContainer = document.getElementById('alertContainer');
-    const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
-    
-    alertContainer.innerHTML = `
-      <div class="alert ${alertClass}">
-        ${message}
-      </div>
-    `;
-    
-    setTimeout(() => {
-      alertContainer.innerHTML = '';
-    }, 5000);
-  }
-  
-  // Tutup modal ketika klik di luar modal
-  window.onclick = function(event) {
-    const modal = document.getElementById('siswaModal');
-    if (event.target == modal) {
-      closeModal();
-    }
-  }
 
-  <script>
-// ========================================
-// 🔰 FITUR FILTER & EXPORT ABSENSI
-// ========================================
-
-async function filterAbsensi() {
-  const kelas = document.getElementById('filterKelas').value;
-  const jurusan = document.getElementById('filterJurusan').value;
-  const bulan = document.getElementById('filterBulan').value;
-  const tbody = document.getElementById('absensiTableBody');
-  const container = document.getElementById('absensiTableContainer');
-
-  container.classList.add('updating');
-  try {
-    let url = '/api/absensi/filter?';
-    if (kelas) url += `kelas=${encodeURIComponent(kelas)}&`;
-    if (jurusan) url += `jurusan=${encodeURIComponent(jurusan)}&`;
-    if (bulan) url += `bulan=${encodeURIComponent(bulan)}&`;
-
-    const res = await fetch(url);
-    const data = await res.json();
-
-    tbody.innerHTML = '';
-    if (data.success && data.data.length > 0) {
-      data.data.forEach(absen => {
-        const waktu = formatDate(absen.waktu_absen);
-        tbody.innerHTML += `
-          <tr>
-            <td>${absen.nis}</td>
-            <td>${absen.nama_siswa}</td>
-            <td>${absen.kelas}</td>
-            <td>${absen.jurusan}</td>
-            <td>${waktu}</td>
-          </tr>`;
-      });
-    } else {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Tidak ada data sesuai filter</td></tr>`;
-    }
-    updateLastRefreshTime();
-  } catch (err) {
-    console.error('Error filter:', err);
-  } finally {
-    container.classList.remove('updating');
-  }
-}
-
-// Tombol Filter
-document.getElementById('btnFilter').addEventListener('click', filterAbsensi);
-
-// Tombol Reset
-document.getElementById('btnResetFilter').addEventListener('click', () => {
-  document.getElementById('filterKelas').value = '';
-  document.getElementById('filterJurusan').value = '';
-  document.getElementById('filterBulan').value = '';
-  refreshAbsensi();
-});
-
-// Tombol Export ke Excel mengikuti filter
-document.getElementById('btnExportExcel').addEventListener('click', () => {
-  const kelas = document.getElementById('filterKelas').value;
-  const jurusan = document.getElementById('filterJurusan').value;
-  const bulan = document.getElementById('filterBulan').value;
-
-  let url = '/export_absensi';
-  const params = [];
-  if (kelas) params.push(`kelas=${encodeURIComponent(kelas)}`);
-  if (jurusan) params.push(`jurusan=${encodeURIComponent(jurusan)}`);
-  if (bulan) params.push(`bulan=${encodeURIComponent(bulan)}`);
-  if (params.length > 0) url += '?' + params.join('&');
-
-  window.location.href = url; // otomatis download
-  });
-  </script>
-</body>
+      // Close modal when clicking outside
+      window.onclick = function (event) {
+        const modal = document.getElementById("siswaModal");
+        if (event.target == modal) {
+          closeModal();
+        }
+      };
+    </script>
+  </body>
 </html>

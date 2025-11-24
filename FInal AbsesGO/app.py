@@ -3,18 +3,29 @@ import mysql.connector
 from mysql.connector import pooling, Error
 from flask_cors import CORS
 from datetime import datetime, timedelta
+import pytz
 import os
 import qrcode
 import uuid
 import io
+import secrets
 from openpyxl import Workbook
+
+# ========================================
+# TIMEZONE CONFIGURATION - WIB
+# ========================================
+WIB = pytz.timezone('Asia/Jakarta')
+
+def get_current_time_wib():
+    """Fungsi untuk mendapatkan waktu sekarang dalam timezone WIB"""
+    return datetime.now(WIB)
 
 # ========================================
 # DATABASE CONFIGURATION & FUNCTIONS
 # ========================================
 
 DB_CONFIG = {
-    'host': 'http://absesgo.mysql.pythonanywhere-services.com',
+    'host': 'absesgo.mysql.pythonanywhere-services.com',
     'user': 'absesgo',
     'password': 'passwordapa',
     'database': 'absesgo$absensi_qr'
@@ -79,9 +90,10 @@ def insert_qr_token(token, expires_dt):
     """Insert token QR baru ke database"""
     conn = connect_db()
     cur = conn.cursor()
+    waktu_buat_wib = get_current_time_wib()
     cur.execute(
         "INSERT INTO qr_token (token, waktu_buat, waktu_expired, status) VALUES (%s, %s, %s, 'aktif')",
-        (token, datetime.now(), expires_dt)
+        (token, waktu_buat_wib, expires_dt)
     )
     conn.commit()
     cur.close()
@@ -130,12 +142,14 @@ def insert_absen_by_id(id_siswa, token_qr):
         conn.close()
         return False
 
+    # ✅ GUNAKAN WAKTU WIB
+    waktu_absen_wib = get_current_time_wib()
+    
     # Insert data absensi
-    now = datetime.now()
     cur.execute("""
         INSERT INTO absensi (id_siswa, waktu_absen, token_qr, status, nama_siswa, jurusan, kelas)
         VALUES (%s, %s, %s, 'hadir', %s, %s, %s)
-    """, (id_siswa, now, token_qr, siswa['nama_siswa'], siswa['jurusan'], siswa['kelas']))
+    """, (id_siswa, waktu_absen_wib, token_qr, siswa['nama_siswa'], siswa['jurusan'], siswa['kelas']))
 
     conn.commit()
     cur.close()
@@ -179,14 +193,40 @@ def get_all_absensi():
 
 app = Flask(__name__)
 CORS(app)
-app.secret_key = "change_this_secret_key_to_random_string"
 
-# Konfigurasi folder untuk menyimpan QR codes
-OUT_DIR = os.path.join('static', 'qrcodes')
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SECRET_KEY'] = 'random_secret_key'
+
+# Konfigurasi folder untuk menyimpan QR codes (gunakan path absolut)
+OUT_DIR = os.path.join(app.root_path, 'static', 'qrcodes')
 os.makedirs(OUT_DIR, exist_ok=True)
 
 # Token TTL (Time To Live) - 5 menit
 TOKEN_TTL_SECONDS = 300
+
+# ========================================
+# LAZY IMPORTS (Import saat dibutuhkan)
+# ========================================
+
+def lazy_import_qrcode():
+    """Import qrcode hanya saat dibutuhkan"""
+    try:
+        import qrcode
+        return qrcode
+    except ImportError:
+        print("⚠️ qrcode module not installed")
+        return None
+
+def lazy_import_openpyxl():
+    """Import openpyxl hanya saat dibutuhkan"""
+    try:
+        from openpyxl import Workbook
+        return Workbook
+    except ImportError:
+        print("⚠️ openpyxl module not installed")
+        return None
 
 # ========================================
 # ROUTES - HALAMAN UTAMA
@@ -204,17 +244,17 @@ def index():
 
 @app.route('/login_guru', methods=['POST'])
 def login_guru():
-    """Proses login guru"""
     username = request.form.get('username')
     password = request.form.get('password')
     guru = get_guru_by_username(username)
-    
+
     if not guru or guru['password'] != password:
         return "Login gagal: username/password salah", 401
-    
+
     session.clear()
     session['guru'] = guru['username']
     session['nama_guru'] = guru['nama_guru']
+    session['role'] = 'guru'
     return redirect(url_for('guru_dashboard'))
 
 @app.route('/guru')
@@ -222,35 +262,89 @@ def guru_dashboard():
     """Dashboard guru"""
     if 'guru' not in session:
         return redirect(url_for('index'))
-    
+
     absensi = get_all_absensi()
     return render_template('guru.html', nama=session.get('nama_guru'), absensi=absensi)
 
 @app.route('/generate_token', methods=['POST'])
 def generate_token():
-    """Generate QR token untuk absensi"""
-    if 'guru' not in session:
-        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 401
-    
-    # Generate token unik
-    token = str(uuid.uuid4())
-    expires_dt = datetime.now() + timedelta(seconds=TOKEN_TTL_SECONDS)
-    
-    # Simpan token ke database
-    insert_qr_token(token, expires_dt)
-    
-    # Generate QR code
-    filename = f"token_{datetime.now().strftime('%Y%m%d%H%M%S')}_{token[:8]}.png"
+    try:
+        if 'role' not in session or session['role'] != 'guru':
+            return jsonify({'status': 'error', 'message': 'Unauthorized'}), 401
+
+        token = secrets.token_urlsafe(32)
+        
+        # ✅ GUNAKAN WAKTU WIB
+        waktu_sekarang_wib = get_current_time_wib()
+        expires_at = waktu_sekarang_wib + timedelta(seconds=TOKEN_TTL_SECONDS)
+
+        # Insert token ke database
+        insert_qr_token(token, expires_at)
+
+        # Lazy import qrcode
+        qrcode_module = lazy_import_qrcode()
+        if not qrcode_module:
+            return jsonify({'status': 'error', 'message': 'QR code module not available'}), 500
+
+        # Generate QR Code
+        qr = qrcode_module.QRCode(
+            version=1,
+            error_correction=qrcode_module.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(token)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        # Simpan file ke static/qrcodes (absolute path)
+        timestamp = waktu_sekarang_wib.strftime('%Y%m%d_%H%M%S')
+        filename = f"token_{timestamp}.png"
+        filepath = os.path.join(OUT_DIR, filename)
+
+        os.makedirs(OUT_DIR, exist_ok=True)
+        img.save(filepath)
+
+        print("[DEBUG] Saved QR file:", filepath)
+        print("[DEBUG] Exists?", os.path.exists(filepath), "Readable?", os.access(filepath, os.R_OK))
+
+        qr_url = url_for('static', filename=f'qrcodes/{filename}')
+
+        return jsonify({
+            'status': 'success',
+            'token': token,
+            'qr_url': qr_url,
+            'expires_in': TOKEN_TTL_SECONDS
+        })
+
+    except Exception as e:
+        import traceback
+        print("=" * 80)
+        print("ERROR in /generate_token:")
+        print(traceback.format_exc())
+        print("=" * 80)
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/qrcodes/<filename>')
+def serve_qr(filename):
     filepath = os.path.join(OUT_DIR, filename)
-    img = qrcode.make(token)
-    img.save(filepath)
-    
-    return jsonify({
-        'status': 'success',
-        'token': token,
-        'qr_url': url_for('static', filename=f"qrcodes/{filename}"),
-        'expires_in': TOKEN_TTL_SECONDS
-    })
+
+    # Cek apakah file ada
+    if not os.path.exists(filepath):
+        print(f"[ERROR] File not found: {filepath}")
+        return "QR Code not found", 404
+
+    # Cek apakah bisa dibaca
+    if not os.access(filepath, os.R_OK):
+        print(f"[ERROR] Permission denied: {filepath}")
+        return "Access denied", 403
+
+    try:
+        return send_file(filepath, mimetype='image/png')
+    except Exception as e:
+        print(f"[ERROR] Failed to serve QR: {e}")
+        return "Internal Server Error", 500
 
 # ========================================
 # ROUTES - SISWA
@@ -262,10 +356,10 @@ def login_siswa():
     username = request.form.get('username')
     password = request.form.get('password')
     siswa = get_siswa_by_username(username)
-    
+
     if not siswa or siswa['password'] != password:
         return "Login gagal: username/password salah", 401
-    
+
     session.clear()
     session['id_siswa'] = siswa['id_siswa']
     session['username'] = siswa['username']
@@ -277,7 +371,7 @@ def siswa_dashboard():
     """Dashboard siswa"""
     if 'id_siswa' not in session:
         return redirect(url_for('index'))
-    
+
     id_s = session['id_siswa']
     history = get_absensi_by_id_siswa(id_s)
     return render_template('siswa.html', nama=session.get('nama_siswa'), history=history)
@@ -287,22 +381,29 @@ def scan_token():
     """Proses scan token QR untuk absensi"""
     if 'id_siswa' not in session:
         return jsonify({'status': 'error', 'message': 'Siswa belum login'}), 401
-    
+
     data = request.get_json() or {}
     token = data.get('token')
-    
+
     if not token:
         return jsonify({'status': 'error', 'message': 'Token kosong'}), 400
-    
+
     # Verifikasi token
     row = verify_token(token)
     if not row:
         return jsonify({'status': 'error', 'message': 'Token tidak valid atau sudah expired'}), 400
+
+    # ✅ CEK WAKTU KADALUARSA DENGAN WIB
+    waktu_sekarang_wib = get_current_time_wib()
     
-    # Cek waktu kadaluarsa
-    if datetime.now() > row['waktu_expired']:
+    # Konversi waktu_expired dari database ke WIB jika belum
+    waktu_expired = row['waktu_expired']
+    if waktu_expired.tzinfo is None:
+        waktu_expired = WIB.localize(waktu_expired)
+    
+    if waktu_sekarang_wib > waktu_expired:
         return jsonify({'status': 'error', 'message': 'Token sudah kadaluarsa'}), 400
-    
+
     # Insert absensi
     success = insert_absen_by_id(session['id_siswa'], token)
     if success:
@@ -310,86 +411,24 @@ def scan_token():
     else:
         return jsonify({'status': 'warning', 'message': 'Anda sudah absen hari ini'})
 
+
 # ========================================
 # API - ABSENSI
 # ========================================
-
 @app.route('/api/absensi', methods=['GET'])
 def api_get_absensi():
-    """API untuk mendapatkan data absensi terbaru"""
+    """API data absensi"""
     try:
-        absensi_list = get_all_absensi()
-        
-        # Format datetime ke string
-        for item in absensi_list:
-            if isinstance(item.get('waktu_absen'), datetime):
-                item['waktu_absen'] = item['waktu_absen'].strftime('%Y-%m-%d %H:%M:%S')
-        
-        return jsonify({
-            'success': True,
-            'data': absensi_list
-        }), 200
-    
+        data = get_all_absensi()
+
+        for row in data:
+            if isinstance(row.get('waktu_absen'), datetime):
+                row['waktu_absen'] = row['waktu_absen'].strftime('%Y-%m-%d %H:%M:%S')
+
+        return jsonify({'success': True, 'data': data}), 200
+
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error: {str(e)}'
-        }), 500
-
-@app.route('/api/absensi/filter', methods=['GET'])
-def api_filter_absensi():
-    """API untuk filter data absensi berdasarkan kelas, jurusan, dan bulan"""
-    try:
-        kelas = request.args.get('kelas')
-        jurusan = request.args.get('jurusan')
-        bulan = request.args.get('bulan')  # format: YYYY-MM
-
-        conn = connect_db()
-        cur = conn.cursor(dictionary=True)
-
-        query = """
-            SELECT s.nis, s.nama_siswa, s.kelas, s.jurusan, a.waktu_absen
-            FROM absensi a
-            JOIN siswa s ON a.id_siswa = s.id_siswa
-            WHERE 1=1
-        """
-        params = []
-
-        # Filter kelas
-        if kelas:
-            query += " AND s.kelas LIKE %s"
-            params.append(f"{kelas}%")
-
-        # Filter jurusan
-        if jurusan:
-            query += " AND s.jurusan = %s"
-            params.append(jurusan)
-
-        # Filter bulan
-        if bulan:
-            start_date = datetime.strptime(bulan + "-01", "%Y-%m-%d")
-            if start_date.month == 12:
-                end_date = start_date.replace(year=start_date.year + 1, month=1)
-            else:
-                end_date = start_date.replace(month=start_date.month + 1)
-            query += " AND a.waktu_absen >= %s AND a.waktu_absen < %s"
-            params.extend([start_date, end_date])
-
-        query += " ORDER BY a.waktu_absen DESC"
-        cur.execute(query, params)
-        data = cur.fetchall()
-        cur.close()
-        conn.close()
-
-        # Format waktu
-        for d in data:
-            if isinstance(d['waktu_absen'], datetime):
-                d['waktu_absen'] = d['waktu_absen'].strftime("%Y-%m-%d %H:%M:%S")
-
-        return jsonify({'success': True, 'data': data})
-    
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 # ========================================
 # EXPORT EXCEL
@@ -397,77 +436,58 @@ def api_filter_absensi():
 
 @app.route('/export_absensi', methods=['GET'])
 def export_absensi():
-    """Export riwayat absensi ke file Excel (.xlsx)"""
+    """Export riwayat absensi ke file Excel (.xlsx) """
     if 'guru' not in session:
         return redirect(url_for('index'))
 
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
-    kelas = request.args.get('kelas')
-    jurusan = request.args.get('jurusan')
-    bulan = request.args.get('bulan')
+    # Ambil parameter filter
+    kelas = request.args.get('kelas', '')
+    jurusan = request.args.get('jurusan', '')
+    bulan = request.args.get('bulan', '')
 
-    absensi_list = get_all_absensi()
+    conn = connect_db()
+    cur = conn.cursor(dictionary=True)
 
-    # Filter data
-    def in_filter(item):
-        dt = item.get('waktu_absen')
-        if isinstance(dt, str):
-            for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d'):
-                try:
-                    dt = datetime.strptime(dt, fmt)
-                    break
-                except:
-                    pass
+    # Query yang sama dengan API filter
+    query = """
+        SELECT a.*, s.nis, s.nama_siswa, s.kelas, s.jurusan
+        FROM absensi a
+        JOIN siswa s ON a.id_siswa = s.id_siswa
+        WHERE 1=1
+    """
+    params = []
 
-        # Filter tanggal rentang
-        if start_date:
-            sd = datetime.strptime(start_date, '%Y-%m-%d')
-            if dt < sd:
-                return False
-        if end_date:
-            ed = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1) - timedelta(seconds=1)
-            if dt > ed:
-                return False
+    query += " ORDER BY a.waktu_absen DESC"
 
-        # Filter bulan
-        if bulan:
-            try:
-                year, month = bulan.split('-')
-                if dt.year != int(year) or dt.month != int(month):
-                    return False
-            except:
-                pass
-
-        # Filter kelas
-        if kelas and str(item.get('kelas', '')).lower() != kelas.lower():
-            return False
-
-        # Filter jurusan
-        if jurusan and str(item.get('jurusan', '')).lower() != jurusan.lower():
-            return False
-
-        return True
-
-    filtered_absen = [it for it in absensi_list if in_filter(it)]
+    cur.execute(query, params)
+    absensi_list = cur.fetchall()
+    cur.close()
+    conn.close()
 
     # Buat workbook Excel
     wb = Workbook()
     ws = wb.active
     ws.title = "Riwayat Absensi"
 
-    headers = ['ID Absen', 'NIS', 'Nama Siswa', 'Kelas', 'Jurusan', 'Waktu Absen', 'Keterangan']
+    headers = ['ID Absen', 'NIS', 'Nama Siswa', 'Kelas', 'Jurusan', 'Waktu Absen', 'Status']
     ws.append(headers)
 
-    for item in filtered_absen:
+    for item in absensi_list:
+        # Format waktu
+        waktu_absen = item.get('waktu_absen')
+        if isinstance(waktu_absen, datetime):
+            waktu_absen = waktu_absen.strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            waktu_absen = str(waktu_absen)
+
         ws.append([
-            item.get('id_absen') or item.get('id') or '',
-            item.get('nis') or '',
-            item.get('nama_siswa') or item.get('nama') or '',
-            item.get('kelas') or '',
-            item.get('jurusan') or '',
-            str(item.get('waktu_absen')),
-            item.get('keterangan') or item.get('status') or ''
+            item.get('id_absen', ''),
+            item.get('nis', ''),
+            item.get('nama_siswa', ''),
+            item.get('kelas', ''),
+            item.get('jurusan', ''),
+            waktu_absen,
+            item.get('status', 'hadir')
         ])
 
     # Auto-adjust column width
@@ -479,14 +499,15 @@ def export_absensi():
     wb.save(bio)
     bio.seek(0)
 
-    filename = f"absensi_filtered_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    # ✅ GUNAKAN WAKTU WIB UNTUK FILENAME
+    filename = f"absensi{get_current_time_wib().strftime('%Y%m%d%H%M%S')}.xlsx"
+
     return send_file(
         bio,
         as_attachment=True,
         download_name=filename,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-
 # ========================================
 # API CRUD - SISWA
 # ========================================
@@ -501,19 +522,19 @@ def api_get_siswa():
                 'success': False,
                 'message': 'Koneksi database gagal'
             }), 500
-        
+
         cursor = connection.cursor(dictionary=True)
         cursor.execute("SELECT * FROM siswa ORDER BY id_siswa ASC")
         data = cursor.fetchall()
-        
+
         cursor.close()
         connection.close()
-        
+
         return jsonify({
             'success': True,
             'data': data
         }), 200
-        
+
     except Error as e:
         return jsonify({
             'success': False,
@@ -525,49 +546,49 @@ def api_add_siswa():
     """API POST - Tambah siswa baru"""
     try:
         data = request.get_json()
-        
+
         username = data.get('username', '')
         password = data.get('password', '')
         nis = data.get('nis', '')
         nama_siswa = data.get('nama_siswa', '')
         jurusan = data.get('jurusan', '')
         kelas = data.get('kelas', '')
-        
+
         # Validasi data
         if not username or not password or not nis or not nama_siswa:
             return jsonify({
                 'success': False,
                 'message': 'Data tidak lengkap. Username, password, NIS, dan nama siswa wajib diisi.'
             }), 400
-        
+
         connection = get_db_connection()
         if connection is None:
             return jsonify({
                 'success': False,
                 'message': 'Koneksi database gagal'
             }), 500
-        
+
         cursor = connection.cursor()
         query = """
-            INSERT INTO siswa (username, password, nis, nama_siswa, jurusan, kelas) 
+            INSERT INTO siswa (username, password, nis, nama_siswa, jurusan, kelas)
             VALUES (%s, %s, %s, %s, %s, %s)
         """
         values = (username, password, nis, nama_siswa, jurusan, kelas)
-        
+
         cursor.execute(query, values)
         connection.commit()
-        
+
         last_id = cursor.lastrowid
-        
+
         cursor.close()
         connection.close()
-        
+
         return jsonify({
             'success': True,
             'message': 'Siswa berhasil ditambahkan',
             'id': last_id
         }), 201
-        
+
     except Error as e:
         return jsonify({
             'success': False,
@@ -584,25 +605,25 @@ def api_get_siswa_by_id(id_siswa):
                 'success': False,
                 'message': 'Koneksi database gagal'
             }), 500
-        
+
         cursor = connection.cursor(dictionary=True)
         cursor.execute("SELECT * FROM siswa WHERE id_siswa=%s", (id_siswa,))
         data = cursor.fetchone()
-        
+
         cursor.close()
         connection.close()
-        
+
         if data is None:
             return jsonify({
                 'success': False,
                 'message': 'Siswa tidak ditemukan'
             }), 404
-        
+
         return jsonify({
             'success': True,
             'data': data
         }), 200
-        
+
     except Error as e:
         return jsonify({
             'success': False,
@@ -614,39 +635,39 @@ def api_update_siswa(id_siswa):
     """API PUT - Update data siswa"""
     try:
         data = request.get_json()
-        
+
         username = data.get('username', '')
         password = data.get('password', '')
         nis = data.get('nis', '')
         nama_siswa = data.get('nama_siswa', '')
         jurusan = data.get('jurusan', '')
         kelas = data.get('kelas', '')
-        
+
         # Validasi data
         if not username or not password or not nis or not nama_siswa:
             return jsonify({
                 'success': False,
                 'message': 'Data tidak lengkap. Username, password, NIS, dan nama siswa wajib diisi.'
             }), 400
-        
+
         connection = get_db_connection()
         if connection is None:
             return jsonify({
                 'success': False,
                 'message': 'Koneksi database gagal'
             }), 500
-        
+
         cursor = connection.cursor()
         query = """
-            UPDATE siswa 
-            SET username=%s, password=%s, nis=%s, nama_siswa=%s, jurusan=%s, kelas=%s 
+            UPDATE siswa
+            SET username=%s, password=%s, nis=%s, nama_siswa=%s, jurusan=%s, kelas=%s
             WHERE id_siswa=%s
         """
         values = (username, password, nis, nama_siswa, jurusan, kelas, id_siswa)
-        
+
         cursor.execute(query, values)
         connection.commit()
-        
+
         if cursor.rowcount == 0:
             cursor.close()
             connection.close()
@@ -654,15 +675,15 @@ def api_update_siswa(id_siswa):
                 'success': False,
                 'message': 'Siswa tidak ditemukan'
             }), 404
-        
+
         cursor.close()
         connection.close()
-        
+
         return jsonify({
             'success': True,
             'message': 'Data siswa berhasil diupdate'
         }), 200
-        
+
     except Error as e:
         return jsonify({
             'success': False,
@@ -679,13 +700,13 @@ def api_delete_siswa(id_siswa):
                 'success': False,
                 'message': 'Koneksi database gagal'
             }), 500
-        
+
         cursor = connection.cursor()
         query = "DELETE FROM siswa WHERE id_siswa=%s"
-        
+
         cursor.execute(query, (id_siswa,))
         connection.commit()
-        
+
         if cursor.rowcount == 0:
             cursor.close()
             connection.close()
@@ -693,15 +714,15 @@ def api_delete_siswa(id_siswa):
                 'success': False,
                 'message': 'Siswa tidak ditemukan'
             }), 404
-        
+
         cursor.close()
         connection.close()
-        
+
         return jsonify({
             'success': True,
             'message': 'Siswa berhasil dihapus'
         }), 200
-        
+
     except Error as e:
         return jsonify({
             'success': False,
@@ -726,4 +747,3 @@ if __name__ == '__main__':
     # Jalankan aplikasi tanpa SSL, di semua interface
     # Akses dari perangkat lain di LAN: http://[IP_ADDRESS]:5000
     app.run(host='0.0.0.0', port=5000, debug=True)
-pass

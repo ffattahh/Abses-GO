@@ -1,263 +1,374 @@
-<!-- templates/siswa.html -->
 <!DOCTYPE html>
 <html lang="id">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dashboard Siswa</title>
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-  <style>
-    :root {
-      --primary: #3484FF;
-      --primary-hover: #2d74e3;
-      --accent: #58D2FF;
-      --text-dark: #222;
-      --bg-light: #f4f6fb;
-      --radius: 0.75rem;
-      --shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
-    }
-
-    * {
-      box-sizing: border-box;
-      font-family: "Poppins", sans-serif;
-    }
-
-    body {
-      margin: 0;
-      background: var(--bg-light);
-      color: var(--text-dark);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 2rem 1rem 4rem;
-    }
-
-    h1 {
-      color: var(--primary);
-      font-size: 1.75rem;
-      margin-bottom: 0.5rem;
-      text-align: center;
-    }
-
-    p.intro {
-      margin-bottom: 1.5rem;
-      text-align: center;
-      color: #555;
-    }
-
-    .card {
-      background: #fff;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 1.5rem;
-      width: 100%;
-      max-width: 45rem;
-      margin-bottom: 2rem;
-    }
-
-    .camera-area {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    video {
-      width: 100%;
-      max-width: 22rem;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      background: #000;
-    }
-
-    #status {
-      margin-top: 0.75rem;
-      font-weight: 600;
-      color: var(--primary);
-      text-align: center;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-      font-size: 0.9rem;
-    }
-
-    table th {
-      background: var(--primary);
-      color: #fff;
-      text-align: center;
-      padding: 0.75rem;
-    }
-
-    table td {
-      border-bottom: 1px solid #ddd;
-      padding: 0.6rem;
-      text-align: center;
-    }
-
-    tr:nth-child(even) {
-      background: #f9fafc;
-    }
-
-    /* Tombol umum */
-    .btn {
-      border: none;
-      border-radius: 0.5rem;
-      padding: 0.6rem 1.25rem;
-      cursor: pointer;
-      font-weight: 600;
-      color: #fff;
-      transition: background 0.3s ease, transform 0.2s;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-
-    .btn:active {
-      transform: scale(0.97);
-    }
-
-    /* Tombol khusus */
-    .btn-refresh {
-      background: var(--primary);
-    }
-    .btn-refresh:hover {
-      background: var(--primary-hover);
-    }
-
-    .btn-logout {
-      background: #dc3545;
-    }
-    .btn-logout:hover {
-      background: #c82333;
-    }
-
-    .button-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-top: 1rem;
-    }
-
-    .logout {
-      margin-top: 1.5rem;
-      text-align: center;
-    }
-
-    @media (max-width: 40rem) {
-      .card {
-        padding: 1rem;
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Dashboard Siswa</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <style>
+      :root {
+        --primary: #3484ff;
+        --primary-hover: #2d74e3;
+        --accent: #58d2ff;
+        --text-dark: #222;
+        --bg-gradient: linear-gradient(to bottom, #1d4ed8, #1d4ed8);
+        --radius: 0.75rem;
+        --shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
       }
-      table th, table td {
-        font-size: 0.8rem;
+
+      * {
+        box-sizing: border-box;
+        font-family: "Poppins", sans-serif;
       }
-      video {
-        max-width: 18rem;
+
+      body {
+        margin: 0;
+        background: var(--bg-gradient),
+          url("/static/img/bg-sekolah.jpg") no-repeat center/cover;
+        color: var(--text-dark);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 2rem 1rem 4rem;
+        position: relative;
+        overflow-x: hidden;
       }
-    }
-  </style>
-</head>
-<body>
-  <h1>Halo, {{ nama }}</h1>
-  <p class="intro">Scan QR yang ditampilkan guru untuk absen otomatis.</p>
 
-  <!-- CARD SCAN -->
-  <div class="card camera-area">
-    <video id="video" autoplay muted></video>
-    <canvas id="canvas" style="display:none;"></canvas>
-    <p id="status">Status: menunggu scan...</p>
-  </div>
-
-  <!-- CARD RIWAYAT -->
-  <div class="card">
-    <h2>Riwayat Absensi</h2>
-    <table>
-      <tr>
-        <th>Nama</th>
-        <th>Kelas</th>
-        <th>Jurusan</th>
-        <th>Waktu</th>
-      </tr>
-      {% for h in history %}
-      <tr>
-        <td>{{ h.nama_siswa }}</td>
-        <td>{{ h.kelas }}</td>
-        <td>{{ h.jurusan }}</td>
-        <td>{{ h.waktu_absen }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-
-    <!-- Tombol Refresh -->
-    <div class="button-container">
-      <button id="btn-refresh-absensi" class="btn btn-refresh">
-        🔄 Refresh
-      </button>
-    </div>
-  </div>
-
-  <!-- Tombol Logout terpisah di bawah -->
-  <div class="logout">
-    <a href="/logout" class="btn btn-logout">Logout</a>
-  </div>
-
-  <script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const statusEl = document.getElementById('status');
-
-    function startCamera() {
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-        .then(stream => {
-          video.srcObject = stream;
-          video.setAttribute("playsinline", true);
-        })
-        .catch(err => {
-          statusEl.textContent = 'Gagal akses kamera: ' + err;
-          statusEl.style.color = "red";
-        });
-    }
-
-    function scanLoop() {
-      if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, canvas.width, canvas.height);
-        if (code) {
-          statusEl.textContent = 'Token ditemukan: ' + code.data.slice(0, 20) + '...';
-          fetch('/scan_token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: code.data })
-          })
-            .then(r => r.json())
-            .then(j => {
-              statusEl.textContent = j.message || JSON.stringify(j);
-              statusEl.style.color = j.status === "success" ? "green" : "red";
-            })
-            .catch(e => {
-              statusEl.textContent = 'Error kirim token: ' + e;
-              statusEl.style.color = "red";
-            });
-
-          setTimeout(() => {
-            statusEl.textContent = 'Menunggu scan...';
-            statusEl.style.color = "var(--primary)";
-          }, 3000);
+      @keyframes bubbleFloat {
+        0% {
+          transform: translateY(0) scale(1);
+        }
+        50% {
+          transform: translateY(-30px) scale(1.05);
+        }
+        100% {
+          transform: translateY(0) scale(1);
         }
       }
+
+      body::before,
+      body::after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+        z-index: 0;
+        animation: bubbleFloat 8s ease-in-out infinite;
+      }
+
+      body::before {
+        width: 750px;
+        height: 750px;
+        bottom: -200px;
+        left: -180px;
+        animation-delay: 0s;
+      }
+
+      body::after {
+        width: 650px;
+        height: 650px;
+        top: 80px;
+        right: -200px;
+        animation-delay: 4s;
+      }
+
+      h1 {
+        color: white;
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        text-align: center;
+        z-index: 1;
+      }
+
+      p.intro {
+        margin-bottom: 1.5rem;
+        text-align: center;
+        color: #e0e0e0;
+        z-index: 1;
+      }
+
+      .card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 1.5rem;
+        width: 100%;
+        max-width: 45rem;
+        margin-bottom: 2rem;
+        z-index: 1;
+      }
+
+      .camera-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      video {
+        width: 100%;
+        max-width: 18rem;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        background: #000;
+      }
+
+      @media (max-width: 768px) {
+        video {
+          max-width: 15rem;
+        }
+      }
+
+      #status {
+        margin-top: 0.75rem;
+        font-weight: 600;
+        color: var(--primary);
+        text-align: center;
+      }
+
+      #scan-result {
+        margin-top: 0.75rem;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        text-align: center;
+        display: none;
+      }
+
+      #scan-result.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        display: block;
+      }
+
+      #scan-result.already-scanned {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+        display: block;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+      }
+
+      table th {
+        background: var(--primary);
+        color: #fff;
+        font-size: 20px;
+        font-weight: 700;
+        text-align: center;
+        padding: 0.75rem;
+      }
+
+      table td {
+        border-bottom: 1px solid #ddd;
+        padding: 0.6rem;
+        text-align: center;
+      }
+
+      tr:nth-child(even) {
+        background: #f9fafc;
+      }
+
+      .btn {
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.8rem 1.25rem;
+        cursor: pointer;
+        font-weight: 700;
+        color: #fff;
+        transition: background 0.3s ease, transform 0.2s;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn:active {
+        transform: scale(0.97);
+      }
+      .btn-refresh {
+        background: var(--primary);
+      }
+      .btn-refresh:hover {
+        background: var(--primary-hover);
+      }
+      .btn-logout {
+        background: #dc3545;
+      }
+      .btn-logout:hover {
+        background: #c82333;
+      }
+
+      .button-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 1rem;
+      }
+
+      .logout {
+        margin-top: 1.5rem;
+        text-align: center;
+        z-index: 1;
+      }
+
+      select {
+        padding: 0.5rem 0.8rem;
+        margin: 0.2rem;
+        border-radius: 0.5rem;
+        border: 1px solid #ccc;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Halo, {{ nama }}</h1>
+    <p class="intro">Scan QR yang ditampilkan guru untuk absen otomatis.</p>
+
+    <!-- CARD SCAN -->
+    <div class="card camera-area">
+      <video id="video" autoplay muted></video>
+      <canvas id="canvas" style="display: none"></canvas>
+      <p id="status">Status: menunggu scan...</p>
+      <div class="button-container">
+        <button id="btn-switch-camera" class="btn btn-refresh">
+          Ganti Kamera
+        </button>
+      </div>
+    </div>
+
+    <!-- CARD RIWAYAT -->
+    <div class="card">
+      <h2>Riwayat Absensi</h2>
+      <table id="absensiTable">
+        <tr>
+          <th>Nama</th>
+          <th>Kelas</th>
+          <th>Jurusan</th>
+          <th>Waktu</th>
+        </tr>
+        {% for h in history %}
+        <tr>
+          <td>{{ h.nama_siswa }}</td>
+          <td>{{ h.kelas }}</td>
+          <td>{{ h.jurusan }}</td>
+          <td>{{ h.waktu_absen }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+
+      <div class="button-container">
+        <button id="btn-refresh-absensi" class="btn btn-refresh">
+          🔄 Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="logout">
+      <a href="/logout" class="btn btn-logout">Logout</a>
+    </div>
+
+    <script>
+      const video = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      const statusEl = document.getElementById("status");
+      let currentStream = null;
+      let usingFrontCamera = false;
+
+      function stopCamera() {
+        if (currentStream) {
+          currentStream.getTracks().forEach((track) => track.stop());
+          currentStream = null;
+        }
+      }
+
+      function startCamera(facingMode = "environment") {
+        stopCamera();
+
+        navigator.mediaDevices
+          .getUserMedia({
+            video: {
+              facingMode: facingMode,
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+          })
+          .then((stream) => {
+            video.srcObject = stream;
+            currentStream = stream;
+            usingFrontCamera = facingMode === "user";
+            video.setAttribute("playsinline", true);
+            statusEl.textContent = "Status: menunggu scan...";
+            statusEl.style.color = "var(--primary)";
+          })
+          .catch((err) => {
+            statusEl.textContent = "Gagal akses kamera: " + err.message;
+            statusEl.style.color = "red";
+          });
+      }
+
+      function switchCamera() {
+        const newFacingMode = usingFrontCamera ? "environment" : "user";
+        startCamera(newFacingMode);
+      }
+
+      function scanLoop() {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, canvas.width, canvas.height);
+          if (code) {
+            statusEl.textContent =
+              "Token ditemukan: " + code.data.slice(0, 20) + "...";
+            fetch("/scan_token", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ token: code.data }),
+            })
+              .then((r) => r.json())
+              .then((j) => {
+                statusEl.textContent = j.message || JSON.stringify(j);
+                statusEl.style.color = j.status === "success" ? "green" : "red";
+
+                if (j.status === "success") {
+                  // Refresh data absensi setelah scan berhasil
+                  setTimeout(() => {
+                    document.getElementById("btn-refresh-absensi").click();
+                  }, 1500);
+                }
+              })
+              .catch((e) => {
+                statusEl.textContent = "Error kirim token: " + e;
+                statusEl.style.color = "red";
+              });
+
+            setTimeout(() => {
+              statusEl.textContent = "Menunggu scan...";
+              statusEl.style.color = "var(--primary)";
+            }, 3000);
+          }
+        }
+        requestAnimationFrame(scanLoop);
+      }
+
+      document
+        .getElementById("btn-refresh-absensi")
+        .addEventListener("click", () => {
+          location.reload();
+        });
+
+      document
+        .getElementById("btn-switch-camera")
+        .addEventListener("click", switchCamera);
+      // Inisialisasi halaman
+      startCamera();
       requestAnimationFrame(scanLoop);
-    }
-
-    // Event listener tombol refresh
-    document.getElementById('btn-refresh-absensi').addEventListener('click', () => {
-      location.reload();
-    });
-
-    startCamera();
-    requestAnimationFrame(scanLoop);
-  </script>
-</body>
+    </script>
+  </body>
 </html>
